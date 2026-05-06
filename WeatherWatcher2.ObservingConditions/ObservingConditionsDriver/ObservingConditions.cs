@@ -12,16 +12,25 @@ namespace WeatherWatcher2.ObservingConditions
     [ProgId("WeatherWatcher2.ObservingConditions")]
     public class ObservingConditions : IObservingConditionsV2
     {
-        private readonly TraceLogger tl;
-        private readonly WeatherDataReader reader;
+        public static string boltwoodFile = "";
+        public static string cumulusFile = "";
+
+        public static double maxWind = 20;
+        public static double maxHumidity = 90;
+        public static double minTemp = 0;
+        public static double maxTemp = 35;
+
+        public static bool useBoltwood = true;
+        public static bool useCumulus = true;
+        public static bool enableLogging = true;
+
         private bool connected;
+        private readonly TraceLogger tl;
 
         public ObservingConditions()
         {
             tl = new TraceLogger("", "WeatherWatcher2.ObservingConditions");
             tl.Enabled = true;
-
-            reader = new WeatherDataReader(tl);
             connected = false;
         }
 
@@ -33,230 +42,47 @@ namespace WeatherWatcher2.ObservingConditions
             }
         }
 
-        public ArrayList SupportedActions
-        {
-            get { return new ArrayList(); }
-        }
-
-        public string Action(string actionName, string actionParameters)
-        {
-            return string.Empty;
-        }
-
-        public void CommandBlind(string command, bool raw)
-        {
-        }
-
-        public bool CommandBool(string command, bool raw)
-        {
-            return false;
-        }
-
-        public string CommandString(string command, bool raw)
-        {
-            return string.Empty;
-        }
-
-        public void Dispose()
-        {
-            if (tl != null)
-            {
-                tl.Enabled = false;
-                tl.Dispose();
-            }
-        }
-
         public bool Connected
         {
             get { return connected; }
-            set
-            {
-                connected = value;
-
-                if (connected)
-                {
-                    reader.Refresh();
-                }
-            }
+            set { connected = value; }
         }
 
-        public void Connect()
-        {
-            Connected = true;
-        }
+        public void Connect() { Connected = true; }
+        public void Disconnect() { Connected = false; }
+        public bool Connecting { get { return false; } }
+        public ArrayList SupportedActions { get { return new ArrayList(); } }
+        public string Action(string actionName, string actionParameters) { return string.Empty; }
+        public void CommandBlind(string command, bool raw) { }
+        public bool CommandBool(string command, bool raw) { return false; }
+        public string CommandString(string command, bool raw) { return string.Empty; }
+        public void Dispose() { if (tl != null) tl.Dispose(); }
 
-        public void Disconnect()
-        {
-            Connected = false;
-        }
+        public string Description { get { return "WeatherWatcher2 Observing Conditions Driver"; } }
+        public string DriverInfo { get { return "WeatherWatcher2 Driver"; } }
+        public string DriverVersion { get { return "1.0.0"; } }
+        public short InterfaceVersion { get { return 2; } }
+        public string Name { get { return "WeatherWatcher2.ObservingConditions"; } }
 
-        public bool Connecting
-        {
-            get { return false; }
-        }
+        public double AveragePeriod { get { return 0; } set { } }
+        public double CloudCover { get { return 0; } }
+        public double DewPoint { get { return 0; } }
+        public double Humidity { get { return 0; } }
+        public double Pressure { get { return 0; } }
+        public double RainRate { get { return 0; } }
+        public double SkyBrightness { get { return 0; } }
+        public double SkyQuality { get { return 0; } }
+        public double SkyTemperature { get { return 0; } }
+        public double StarFWHM { get { return 0; } }
+        public double Temperature { get { return 0; } }
+        public double WindDirection { get { return 0; } }
+        public double WindGust { get { return 0; } }
+        public double WindSpeed { get { return 0; } }
 
-        public IStateValueCollection DeviceState
-        {
-            get { return null; }
-        }
-
-        public string Description
-        {
-            get { return "WeatherWatcher2 Observing Conditions Driver"; }
-        }
-
-        public string DriverInfo
-        {
-            get
-            {
-                return "Reads Cumulus realtime.txt and Boltwood II weather files";
-            }
-        }
-
-        public string DriverVersion
-        {
-            get { return "1.0.0"; }
-        }
-
-        public short InterfaceVersion
-        {
-            get { return 2; }
-        }
-
-        public string Name
-        {
-            get { return "WeatherWatcher2.ObservingConditions"; }
-        }
-
-        public double AveragePeriod
-        {
-            get { return 0; }
-            set { }
-        }
-
-        public double CloudCover
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.CloudCover;
-            }
-        }
-
-        public double DewPoint
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.DewPoint;
-            }
-        }
-
-        public double Humidity
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.Humidity;
-            }
-        }
-
-        public double Pressure
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.Pressure;
-            }
-        }
-
-        public double RainRate
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.RainRate;
-            }
-        }
-
-        public double SkyBrightness
-        {
-            get { return 0; }
-        }
-
-        public double SkyQuality
-        {
-            get { return 0; }
-        }
-
-        public double SkyTemperature
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.SkyTemperature;
-            }
-        }
-
-        public double StarFWHM
-        {
-            get { return 0; }
-        }
-
-        public double Temperature
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.Temperature;
-            }
-        }
-
-        public double WindDirection
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.WindDirection;
-            }
-        }
-
-        public double WindGust
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.WindGust;
-            }
-        }
-
-        public double WindSpeed
-        {
-            get
-            {
-                reader.Refresh();
-                return reader.Data.WindSpeed;
-            }
-        }
-
-        public void Refresh()
-        {
-            reader.Refresh();
-        }
-
-        public string SensorDescription(string propertyName)
-        {
-            return reader.SensorDescription(propertyName);
-        }
-
-        public double TimeSinceLastUpdate(string propertyName)
-        {
-            return reader.TimeSinceLastUpdate(propertyName);
-        }
-
-        public double Value(string propertyName)
-        {
-            return reader.Value(propertyName);
-        }
+        public void Refresh() { }
+        public string SensorDescription(string propertyName) { return propertyName; }
+        public double TimeSinceLastUpdate(string propertyName) { return 0; }
+        public double Value(string propertyName) { return 0; }
+        public IStateValueCollection DeviceState { get { return null; } }
     }
 }

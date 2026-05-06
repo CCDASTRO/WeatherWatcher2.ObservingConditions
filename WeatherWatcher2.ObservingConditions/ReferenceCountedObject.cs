@@ -14,7 +14,7 @@ namespace ASCOM.LocalServer
         public ReferenceCountedObjectBase()
         {
             // We increment the global count of objects.
-            Server.IncrementObjectCount();
+            LocalServerHost.IncrementObjectCount();
         }
 
         /// <summary>
@@ -23,11 +23,11 @@ namespace ASCOM.LocalServer
         ~ReferenceCountedObjectBase()
         {
             // We decrement the global count of objects.
-            Server.DecrementObjectCount();
+            LocalServerHost.DecrementObjectCount();
 
             // We then immediately test to see if we the conditions
             // are right to attempt to terminate this server application.
-            Server.ExitIf();
+            LocalServerHost.ExitIf();
         }
     }
 }

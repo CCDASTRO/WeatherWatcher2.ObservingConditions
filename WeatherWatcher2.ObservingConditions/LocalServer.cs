@@ -26,7 +26,7 @@ using System.Windows.Forms;
 
 namespace ASCOM.LocalServer
 {
-    public static class Server
+    public static class LocalServerHost
     {
 
         #region Variables
@@ -247,7 +247,7 @@ namespace ASCOM.LocalServer
         /// Performs a thread-safe decrementation the server lock count.
         /// </summary>
         /// <returns></returns>
-        public static int DecrementServerLockLock()
+        public static int DecrementServerLockCount()
         {
             int newCount = Interlocked.Decrement(ref serverLockCount); // Decrement the server lock count for this server.
             TL.LogMessage("DecrementServerLockLock", $"New server lock count: {newCount}");

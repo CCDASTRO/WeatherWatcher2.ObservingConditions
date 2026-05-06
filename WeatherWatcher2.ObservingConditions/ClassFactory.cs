@@ -226,15 +226,14 @@ namespace ASCOM.LocalServer
         {
             if (incrementLockCount)
             {
-                Server.IncrementServerLockCount();
+                LocalServerHost.IncrementServerLockCount();
             }
             else
             {
-                Server.DecrementServerLockLock();
+                LocalServerHost.DecrementServerLockCount();
             }
 
-            // Check whether we need to shutdown the server application.
-            Server.ExitIf();
+            LocalServerHost.ExitIf();
         }
 
         #endregion
