@@ -20,10 +20,18 @@ namespace WeatherWatcher2.ObservingConditions
 
                 InitializeComponent();
                 LoadSettings();
+
+                tl.LogMessage(
+                    "Constructor",
+                    "Setup dialog initialized");
             }
             catch (Exception ex)
             {
-                tl?.LogMessageCrLf("Constructor", ex.ToString());
+                MessageBox.Show(
+                    ex.ToString(),
+                    "SETUP DIALOG ERROR",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -46,34 +54,88 @@ namespace WeatherWatcher2.ObservingConditions
 
         private void btnBrowseBoltwood_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog dlg = new OpenFileDialog())
+            try
             {
-                dlg.Title = "Select Boltwood File";
-                dlg.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
-
-                if (dlg.ShowDialog() == DialogResult.OK)
+                using (OpenFileDialog dlg = new OpenFileDialog())
                 {
-                    txtBoltwood.Text = dlg.FileName;
-                    tl.LogMessage("BrowseBoltwood", dlg.FileName);
+                    dlg.Title = "Select Boltwood File";
+                    dlg.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+                    dlg.CheckFileExists = true;
+                    dlg.Multiselect = false;
+
+                    DialogResult result = dlg.ShowDialog(this);
+
+                    if (result == DialogResult.OK)
+                    {
+                        txtBoltwood.Text = dlg.FileName;
+                        tl?.LogMessage(
+                            "BrowseBoltwood",
+                            "Selected: " + dlg.FileName);
+                    }
+                    else
+                    {
+                        tl?.LogMessage(
+                            "BrowseBoltwood",
+                            "User cancelled browse");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Browse Boltwood Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                tl?.LogMessageCrLf(
+                    "BrowseBoltwood",
+                    ex.ToString());
             }
         }
 
         private void btnBrowseCumulus_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog dlg = new OpenFileDialog())
+            try
             {
-                dlg.Title = "Select Cumulus File";
-                dlg.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
-
-                if (dlg.ShowDialog() == DialogResult.OK)
+                using (OpenFileDialog dlg = new OpenFileDialog())
                 {
-                    txtCumulus.Text = dlg.FileName;
-                    tl.LogMessage("BrowseCumulus", dlg.FileName);
+                    dlg.Title = "Select Cumulus File";
+                    dlg.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+                    dlg.CheckFileExists = true;
+                    dlg.Multiselect = false;
+
+                    DialogResult result = dlg.ShowDialog(this);
+
+                    if (result == DialogResult.OK)
+                    {
+                        txtCumulus.Text = dlg.FileName;
+
+                        tl?.LogMessage(
+                            "BrowseCumulus",
+                            "Selected: " + dlg.FileName);
+                    }
+                    else
+                    {
+                        tl?.LogMessage(
+                            "BrowseCumulus",
+                            "User cancelled browse");
+                    }
                 }
             }
-        }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Browse Cumulus Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
 
+                tl?.LogMessageCrLf(
+                    "BrowseCumulus",
+                    ex.ToString());
+            }
+        }
         private void btnOK_Click(object sender, EventArgs e)
         {
             DriverSettings.BoltwoodFile = txtBoltwood.Text;

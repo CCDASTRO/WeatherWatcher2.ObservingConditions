@@ -5,6 +5,7 @@ using ASCOM.Utilities;
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace WeatherWatcher2.ObservingConditions
@@ -73,22 +74,34 @@ namespace WeatherWatcher2.ObservingConditions
 
         public void SetupDialog()
         {
-            try
-            {
-                //MessageBox.Show("SetupDialog started");
+            Exception threadException = null;
 
-                using (SetupDialogForm form = new SetupDialogForm())
+            Thread uiThread = new Thread(() =>
+            {
+                try
                 {
-                    //MessageBox.Show("Form created");
-
-                    form.ShowDialog();
-
-                    //MessageBox.Show("Form closed");
+                    using (SetupDialogForm form = new SetupDialogForm())
+                    {
+                        form.ShowDialog();
+                    }
                 }
-            }
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    threadException = ex;
+                }
+            });
+
+            uiThread.SetApartmentState(ApartmentState.STA);
+            uiThread.Start();
+            uiThread.Join();
+
+            if (threadException != null)
             {
-                tl?.LogMessageCrLf("Constructor", ex.ToString());
+                MessageBox.Show(
+                    threadException.ToString(),
+                    "SetupDialog Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
