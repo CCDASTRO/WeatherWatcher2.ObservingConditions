@@ -20,6 +20,7 @@
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SetupDialogForm));
             this.txtBoltwood = new System.Windows.Forms.TextBox();
             this.txtCumulus = new System.Windows.Forms.TextBox();
             this.txtMaxWind = new System.Windows.Forms.TextBox();
@@ -37,6 +38,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
+            this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
             // 
             // txtBoltwood
@@ -48,7 +51,7 @@
             // 
             // txtCumulus
             // 
-            this.txtCumulus.Location = new System.Drawing.Point(132, 53);
+            this.txtCumulus.Location = new System.Drawing.Point(132, 39);
             this.txtCumulus.Name = "txtCumulus";
             this.txtCumulus.Size = new System.Drawing.Size(250, 20);
             this.txtCumulus.TabIndex = 1;
@@ -91,7 +94,7 @@
             // 
             // chkUseCumulus
             // 
-            this.chkUseCumulus.Location = new System.Drawing.Point(14, 53);
+            this.chkUseCumulus.Location = new System.Drawing.Point(14, 39);
             this.chkUseCumulus.Name = "chkUseCumulus";
             this.chkUseCumulus.Size = new System.Drawing.Size(112, 20);
             this.chkUseCumulus.TabIndex = 7;
@@ -99,9 +102,9 @@
             // 
             // chkEnableLogging
             // 
-            this.chkEnableLogging.Location = new System.Drawing.Point(268, 187);
+            this.chkEnableLogging.Location = new System.Drawing.Point(14, 65);
             this.chkEnableLogging.Name = "chkEnableLogging";
-            this.chkEnableLogging.Size = new System.Drawing.Size(150, 20);
+            this.chkEnableLogging.Size = new System.Drawing.Size(114, 20);
             this.chkEnableLogging.TabIndex = 8;
             this.chkEnableLogging.Text = "Enable Logging";
             // 
@@ -116,7 +119,7 @@
             // 
             // btnBrowseCumulus
             // 
-            this.btnBrowseCumulus.Location = new System.Drawing.Point(392, 53);
+            this.btnBrowseCumulus.Location = new System.Drawing.Point(392, 42);
             this.btnBrowseCumulus.Name = "btnBrowseCumulus";
             this.btnBrowseCumulus.Size = new System.Drawing.Size(75, 23);
             this.btnBrowseCumulus.TabIndex = 10;
@@ -134,7 +137,7 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(268, 148);
+            this.btnCancel.Location = new System.Drawing.Point(372, 105);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 28);
             this.btnCancel.TabIndex = 12;
@@ -177,9 +180,19 @@
             this.label6.TabIndex = 18;
             this.label6.Text = "Max Temp";
             // 
+            // pictureBox2
+            // 
+            this.pictureBox2.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox2.Image")));
+            this.pictureBox2.Location = new System.Drawing.Point(286, 153);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(150, 25);
+            this.pictureBox2.TabIndex = 20;
+            this.pictureBox2.TabStop = false;
+            // 
             // SetupDialogForm
             // 
             this.ClientSize = new System.Drawing.Size(484, 217);
+            this.Controls.Add(this.pictureBox2);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
@@ -197,8 +210,11 @@
             this.Controls.Add(this.btnBrowseCumulus);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.btnCancel);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SetupDialogForm";
             this.Text = "WeatherWatcher2 Setup";
+            this.Load += new System.EventHandler(this.SetupDialogForm_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -207,5 +223,6 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.PictureBox pictureBox2;
     }
 }

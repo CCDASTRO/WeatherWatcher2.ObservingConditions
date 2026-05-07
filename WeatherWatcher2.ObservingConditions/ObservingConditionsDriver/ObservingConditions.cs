@@ -19,7 +19,7 @@ namespace WeatherWatcher2.ObservingConditions
     {
         private bool connected;
         private readonly TraceLogger tl;
-
+        private readonly WeatherDataReader reader;
         public ObservingConditions()
         {
             try
@@ -33,6 +33,7 @@ namespace WeatherWatcher2.ObservingConditions
                     "WeatherWatcher2.ObservingConditions");
 
                 tl.Enabled = DriverSettings.EnableLogging;
+                reader = new WeatherDataReader(tl);
                 connected = false;
 
                 tl.LogMessage(
@@ -225,7 +226,11 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return "1.0.0";
+                return System.Reflection.Assembly
+                 .GetExecutingAssembly()
+                 .GetName()
+                 .Version
+                 .ToString(2);
             }
         }
 
@@ -264,7 +269,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.CloudCover;
             }
         }
 
@@ -272,7 +278,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.DewPoint;
             }
         }
 
@@ -280,7 +287,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.Humidity;
             }
         }
 
@@ -288,7 +296,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.Pressure;
             }
         }
 
@@ -296,9 +305,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                throw new PropertyNotImplementedException(
-                    "RainRate",
-                    false);
+                reader.Refresh();
+                return reader.Data.RainRate;
             }
         }
 
@@ -326,7 +334,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.SkyTemperature;
             }
         }
 
@@ -344,7 +353,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.Temperature;
             }
         }
 
@@ -352,7 +362,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.WindDirection;
             }
         }
 
@@ -360,7 +371,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.WindGust;
             }
         }
 
@@ -368,7 +380,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return 0;
+                reader.Refresh();
+                return reader.Data.WindSpeed;
             }
         }
 
@@ -378,14 +391,12 @@ namespace WeatherWatcher2.ObservingConditions
 
         public void Refresh()
         {
-            if (tl != null)
-            {
-                tl.LogMessage(
-                    "Refresh",
-                    "Refresh called");
-            }
-        }
+            reader.Refresh();
 
+            tl?.LogMessage(
+                "Refresh",
+                "Weather data refreshed");
+        }
         public string SensorDescription(
             string propertyName)
         {

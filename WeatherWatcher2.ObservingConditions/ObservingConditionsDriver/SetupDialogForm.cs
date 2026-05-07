@@ -182,5 +182,10 @@ namespace WeatherWatcher2.ObservingConditions
 
             base.Dispose(disposing);
         }
+
+        private void SetupDialogForm_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
