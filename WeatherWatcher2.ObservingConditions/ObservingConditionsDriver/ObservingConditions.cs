@@ -288,14 +288,23 @@ namespace WeatherWatcher2.ObservingConditions
 
         #region Weather Properties
 
+        private double averagePeriod = 0;
+
         public double AveragePeriod
         {
             get
             {
-                return 0;
+                return averagePeriod;
             }
             set
             {
+                if (value < 0)
+                    throw new ASCOM.InvalidValueException(
+                        "AveragePeriod",
+                        value.ToString(),
+                        "Value must be >= 0");
+
+                averagePeriod = value;
             }
         }
 
@@ -431,16 +440,32 @@ namespace WeatherWatcher2.ObservingConditions
                 "Refresh",
                 "Weather data refreshed");
         }
-        public string SensorDescription(
-            string propertyName)
+        public string SensorDescription(string propertyName)
         {
-            return propertyName;
+            switch (propertyName)
+            {
+                case "SkyBrightness":
+                case "SkyQuality":
+                case "StarFWHM":
+                    throw new ASCOM.PropertyNotImplementedException(propertyName, false);
+
+                default:
+                    return propertyName;
+            }
         }
 
-        public double TimeSinceLastUpdate(
-            string propertyName)
+        public double TimeSinceLastUpdate(string propertyName)
         {
-            return 0;
+            switch (propertyName)
+            {
+                case "SkyBrightness":
+                case "SkyQuality":
+                case "StarFWHM":
+                    throw new ASCOM.PropertyNotImplementedException(propertyName, false);
+
+                default:
+                    return 0;
+            }
         }
 
         public double Value(
@@ -453,7 +478,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return null;
+                return new StateValueCollection();
             }
         }
 
