@@ -31,7 +31,7 @@ namespace ASCOM.LocalServer
         private static CancellationTokenSource gcTokenSource;
 
         private const string DriverId =
-            "WeatherWatcher2.ObservingConditions.ObservingConditions";
+            "WeatherWatcher2.ObservingConditions";
 
         private const string DriverDescription =
             "WeatherWatcher2 Observing Conditions";

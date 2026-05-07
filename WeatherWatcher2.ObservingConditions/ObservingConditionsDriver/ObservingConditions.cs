@@ -24,16 +24,38 @@ namespace WeatherWatcher2.ObservingConditions
         {
             try
             {
-                //MessageBox.Show("Constructor Fired", "DEBUG");
-                ASCOM.LocalServer.LocalServerHost.IncrementObjectCount();
-                DriverSettings.Load();
-
                 tl = new TraceLogger(
                     "",
                     "WeatherWatcher2.ObservingConditions");
 
+                // Force ON for debugging
+                tl.Enabled = true;
+
+                tl.LogMessage(
+                    "Constructor",
+                    "Starting constructor");
+
+                ASCOM.LocalServer.LocalServerHost.IncrementObjectCount();
+
+                tl.LogMessage(
+                    "Constructor",
+                    "IncrementObjectCount OK");
+
+                DriverSettings.Load();
+
+                tl.LogMessage(
+                    "Constructor",
+                    "DriverSettings.Load OK");
+
+                // Restore user preference after successful load
                 tl.Enabled = DriverSettings.EnableLogging;
+
                 reader = new WeatherDataReader(tl);
+
+                tl.LogMessage(
+                    "Constructor",
+                    "WeatherDataReader created");
+
                 connected = false;
 
                 tl.LogMessage(
@@ -42,7 +64,19 @@ namespace WeatherWatcher2.ObservingConditions
             }
             catch (Exception ex)
             {
-                tl?.LogMessageCrLf("Constructor",ex.ToString());
+                tl?.LogMessageCrLf(
+                    "Constructor",
+                    ex.ToString());
+
+                try
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                        ex.ToString(),
+                        "Constructor Error");
+                }
+                catch
+                {
+                }
 
                 throw;
             }
@@ -56,7 +90,7 @@ namespace WeatherWatcher2.ObservingConditions
                 profile.DeviceType = "ObservingConditions";
 
                 profile.Register(
-                    "WeatherWatcher2.ObservingConditions.ObservingConditions",
+                    "WeatherWatcher2.ObservingConditions",
                     "WeatherWatcher2 Observing Conditions");
             }
         }
@@ -69,7 +103,7 @@ namespace WeatherWatcher2.ObservingConditions
                 profile.DeviceType = "ObservingConditions";
 
                 profile.Unregister(
-                    "WeatherWatcher2.ObservingConditions.ObservingConditions");
+                    "WeatherWatcher2.ObservingConditions");
             }
         }
 

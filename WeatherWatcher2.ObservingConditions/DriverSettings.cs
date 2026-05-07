@@ -1,4 +1,5 @@
 ﻿using ASCOM.Utilities;
+using System;
 
 namespace WeatherWatcher2.ObservingConditions
 {
@@ -18,21 +19,44 @@ namespace WeatherWatcher2.ObservingConditions
 
         public static void Load()
         {
-            using (Profile profile = new Profile())
+            try
             {
-                profile.DeviceType = "ObservingConditions";
+                using (Profile profile = new Profile())
+                {
+                    profile.DeviceType = "ObservingConditions";
 
-                BoltwoodFile = profile.GetValue(
-                    "WeatherWatcher2.ObservingConditions",
-                    "BoltwoodFile",
-                    "",
-                    BoltwoodFile);
+                    BoltwoodFile = profile.GetValue(
+                        "WeatherWatcher2.ObservingConditions",
+                        "BoltwoodFile",
+                        "",
+                        @"C:\ProgramData\WeatherWatcher2\weatherdata.txt");
 
-                CumulusFile = profile.GetValue(
-                    "WeatherWatcher2.ObservingConditions",
-                    "CumulusFile",
-                    "",
-                    CumulusFile);
+                    CumulusFile = profile.GetValue(
+                        "WeatherWatcher2.ObservingConditions",
+                        "CumulusFile",
+                        "",
+                        @"C:\Cumulus\realtime.txt");
+
+                    EnableLogging = Convert.ToBoolean(
+                        profile.GetValue(
+                            "WeatherWatcher2.ObservingConditions",
+                            "EnableLogging",
+                            "",
+                            "false"));
+                }
+            }
+            catch (Exception)
+            {
+                // First install / ASCOM profile not registered yet
+                // Fall back to defaults so constructor does not fail
+
+                BoltwoodFile =
+                    @"C:\ProgramData\WeatherWatcher2\weatherdata.txt";
+
+                CumulusFile =
+                    @"C:\Cumulus\realtime.txt";
+
+                EnableLogging = false;
             }
         }
 
