@@ -39,6 +39,7 @@
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.lblVersion = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
             // 
@@ -189,9 +190,19 @@
             this.pictureBox2.TabIndex = 20;
             this.pictureBox2.TabStop = false;
             // 
+            // lblVersion
+            // 
+            this.lblVersion.AutoSize = true;
+            this.lblVersion.Location = new System.Drawing.Point(302, 186);
+            this.lblVersion.Name = "lblVersion";
+            this.lblVersion.Size = new System.Drawing.Size(41, 13);
+            this.lblVersion.TabIndex = 21;
+            this.lblVersion.Text = "version";
+            // 
             // SetupDialogForm
             // 
             this.ClientSize = new System.Drawing.Size(484, 217);
+            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.pictureBox2);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
@@ -224,5 +235,6 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.PictureBox pictureBox2;
+        private System.Windows.Forms.Label lblVersion;
     }
 }

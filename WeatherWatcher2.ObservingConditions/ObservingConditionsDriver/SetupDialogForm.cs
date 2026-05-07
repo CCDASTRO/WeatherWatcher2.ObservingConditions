@@ -185,7 +185,18 @@ namespace WeatherWatcher2.ObservingConditions
 
         private void SetupDialogForm_Load(object sender, EventArgs e)
         {
+            chkEnableLogging.Checked = DriverSettings.EnableLogging;
 
+            txtCumulus.Text = DriverSettings.CumulusFile;
+            txtBoltwood.Text = DriverSettings.BoltwoodFile;
+
+            lblVersion.Text =
+                "Driver Version: " +
+                System.Reflection.Assembly
+                    .GetExecutingAssembly()
+                    .GetName()
+                    .Version
+                    .ToString(3);
         }
     }
 }
