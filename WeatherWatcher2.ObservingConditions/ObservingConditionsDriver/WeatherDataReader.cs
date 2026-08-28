@@ -1,4 +1,4 @@
-﻿using ASCOM.Utilities;
+using ASCOM.Utilities;
 using System;
 using System.IO;
 
@@ -7,6 +7,14 @@ namespace WeatherWatcher2.ObservingConditions
     public class WeatherDataReader
     {
         private readonly TraceLogger tl;
+        private readonly object gate = new object();
+        private bool ambientHealthy;
+        private string sourceSelection;
+        private DateTime boltwoodUpdateUtc = DateTime.MinValue;
+        private DateTime ambientUpdateUtc = DateTime.MinValue;
+        private string ambientError;
+        internal Action<bool> SafetyWriter { get; set; }
+        internal AmbientWeatherClient AmbientClient = AmbientWeatherClient.Shared;
 
         public WeatherSnapshot Data { get; private set; }
 
@@ -18,15 +26,79 @@ namespace WeatherWatcher2.ObservingConditions
 
         public void Refresh()
         {
-            ReadCumulus();
-            ReadBoltwood();
-            EvaluateSafeState();
-            WriteSafetyFile();
+            lock (gate)
+            {
+                string selection = DriverSettings.UseAmbient + "|" + DriverSettings.UseCumulus + "|" +
+                    DriverSettings.UseBoltwood + "|" + DriverSettings.CumulusFile + "|" + DriverSettings.BoltwoodFile;
+                if (sourceSelection != selection)
+                {
+                    sourceSelection = selection;
+                    Data = new WeatherSnapshot();
+                }
+                if (DriverSettings.UseAmbient)
+                {
+                    // A new snapshot prevents values from a previous source or missing fields leaking through.
+                    Data = new WeatherSnapshot();
+                    ReadAmbient();
+                }
+                else if (DriverSettings.UseCumulus)
+                {
+                    ReadCumulus();
+                }
+                if (DriverSettings.UseBoltwood) ReadBoltwood();
+                EvaluateSafeState();
+                if (SafetyWriter != null) SafetyWriter(Data.IsSafe);
+                else WriteSafetyFile();
 
-            Data.LastUpdateUtc =
-                DateTime.UtcNow;
+                if (!DriverSettings.UseAmbient)
+                    Data.LastUpdateUtc = DateTime.UtcNow; // Preserve the existing file-mode behavior.
+            }
         }
 
+        private void ReadAmbient()
+        {
+            string error;
+            var reading = AmbientClient.Get(DriverSettings.AmbientApplicationKey,
+                DriverSettings.AmbientApiKey, DriverSettings.AmbientMacAddress, out error);
+            ambientError = error;
+            ambientUpdateUtc = reading == null ? DateTime.MinValue : reading.TimestampUtc;
+            Data.LastUpdateUtc = ambientUpdateUtc;
+            ambientHealthy = reading != null && error == null &&
+                reading.IsFresh(DateTime.UtcNow, DriverSettings.AmbientMaxAgeSeconds) && reading.HasSafetyData;
+            Data.Temperature = reading == null ? double.NaN : reading.Temperature;
+            Data.DewPoint = reading == null ? double.NaN : reading.DewPoint;
+            Data.Humidity = reading == null ? double.NaN : reading.Humidity;
+            Data.Pressure = reading == null ? double.NaN : reading.Pressure;
+            Data.WindSpeed = reading == null ? double.NaN : reading.WindSpeed;
+            Data.WindGust = reading == null ? double.NaN : reading.WindGust;
+            Data.WindDirection = reading == null ? double.NaN : reading.WindDirection;
+            Data.RainRate = reading == null ? double.NaN : reading.RainRate;
+            Data.RainUnsafe = reading != null && reading.RainRate > 0;
+            Data.CloudCover = double.NaN;
+            Data.SkyTemperature = double.NaN;
+            boltwoodUpdateUtc = DateTime.MinValue;
+        }
+
+        public double ReadValue(string propertyName)
+        {
+            lock (gate)
+            {
+                Refresh();
+                if (DriverSettings.UseAmbient)
+                {
+                    bool sky = propertyName == "CloudCover" || propertyName == "SkyTemperature";
+                    if (sky && !DriverSettings.UseBoltwood)
+                        throw new ASCOM.PropertyNotImplementedException(propertyName, false);
+                    DateTime timestamp = sky ? boltwoodUpdateUtc : ambientUpdateUtc;
+                    if (timestamp == DateTime.MinValue || (DateTime.UtcNow - timestamp).TotalSeconds > DriverSettings.AmbientMaxAgeSeconds ||
+                        (!sky && ambientError != null))
+                        throw new ASCOM.DriverException(!sky && ambientError != null ? ambientError : "Weather data is unavailable or stale.");
+                    if (double.IsNaN(Value(propertyName)))
+                        throw new ASCOM.PropertyNotImplementedException(propertyName, false);
+                }
+                return Value(propertyName);
+            }
+        }
         private void ReadCumulus()
         {
             try
@@ -139,7 +211,7 @@ namespace WeatherWatcher2.ObservingConditions
 
                 Data.SkyTemperature = ParseDouble(p, 4);
 
-                if (Data.Temperature == 0)
+                if (!DriverSettings.UseAmbient && Data.Temperature == 0)
                 {
                     Data.Temperature = ParseDouble(p, 5);
 
@@ -155,11 +227,12 @@ namespace WeatherWatcher2.ObservingConditions
                 bool wetDetected =
                     p[12] != "0";
 
-                Data.RainUnsafe =
-                    rainDetected || wetDetected;
-
-                Data.RainRate =
-                    Data.RainUnsafe ? 1 : 0;
+                Data.RainUnsafe = DriverSettings.UseAmbient
+                    ? Data.RainUnsafe || rainDetected || wetDetected
+                    : rainDetected || wetDetected;
+                if (!DriverSettings.UseAmbient)
+                    Data.RainRate = Data.RainUnsafe ? 1 : 0;
+                boltwoodUpdateUtc = System.IO.File.GetLastWriteTimeUtc(path);
 
                 //
                 // Derived cloud cover from sky temp
@@ -272,9 +345,9 @@ namespace WeatherWatcher2.ObservingConditions
         }
         private void EvaluateSafeState()
         {
-            double maxWind = ProfileManager.ReadDouble("MaxWind", 20);
-            double maxHumidity = ProfileManager.ReadDouble("MaxHumidity", 90);
-            double minTemp = ProfileManager.ReadDouble("MinTemp", 0);
+            double maxWind = DriverSettings.MaxWind;
+            double maxHumidity = DriverSettings.MaxHumidity;
+            double minTemp = DriverSettings.MinTemp;
 
             Data.WindUnsafe = Data.WindSpeed > maxWind;
             Data.HumidityUnsafe = Data.Humidity > maxHumidity;
@@ -287,6 +360,11 @@ namespace WeatherWatcher2.ObservingConditions
                   Data.TemperatureUnsafe ||
                   Data.CloudUnsafe ||
                   Data.WetUnsafe);
+            if (DriverSettings.UseAmbient)
+                Data.IsSafe = Data.IsSafe && ambientHealthy &&
+                    (!DriverSettings.UseBoltwood ||
+                     (boltwoodUpdateUtc != DateTime.MinValue &&
+                      !IsFileStale(DriverSettings.BoltwoodFile, DriverSettings.AmbientMaxAgeSeconds)));
         }
 
         public string SensorDescription(string propertyName)
@@ -296,7 +374,20 @@ namespace WeatherWatcher2.ObservingConditions
 
         public double TimeSinceLastUpdate(string propertyName)
         {
-            return (DateTime.UtcNow - Data.LastUpdateUtc).TotalSeconds;
+            lock (gate)
+            {
+                if (!DriverSettings.UseAmbient)
+                    return (DateTime.UtcNow - Data.LastUpdateUtc).TotalSeconds;
+                Refresh();
+                bool sky = propertyName == "SkyTemperature" || propertyName == "CloudCover";
+                if (sky && !DriverSettings.UseBoltwood)
+                    throw new ASCOM.PropertyNotImplementedException(propertyName, false);
+                DateTime timestamp = sky ? boltwoodUpdateUtc : ambientUpdateUtc;
+                if (propertyName == "" && boltwoodUpdateUtc > timestamp) timestamp = boltwoodUpdateUtc;
+                if (timestamp == DateTime.MinValue)
+                    throw new ASCOM.DriverException("No weather observation has been received.");
+                return Math.Max(0, (DateTime.UtcNow - timestamp).TotalSeconds);
+            }
         }
 
         public double Value(string propertyName)

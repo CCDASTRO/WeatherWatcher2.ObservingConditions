@@ -1,4 +1,4 @@
-﻿using ASCOM;
+using ASCOM;
 using ASCOM.DeviceInterface;
 using ASCOM.LocalServer;
 using ASCOM.Utilities;
@@ -18,6 +18,8 @@ namespace WeatherWatcher2.ObservingConditions
     public class ObservingConditions : IObservingConditionsV2
     {
         private bool connected;
+        private System.Threading.Timer ambientTimer;
+        private readonly object connectionGate = new object();
         private readonly TraceLogger tl;
         private readonly WeatherDataReader reader;
         public ObservingConditions()
@@ -150,7 +152,28 @@ namespace WeatherWatcher2.ObservingConditions
             }
             set
             {
-                connected = value;
+                lock (connectionGate)
+                {
+                    if (connected == value) return;
+                    connected = value;
+                    if (value)
+                    {
+                        ambientTimer = new System.Threading.Timer(_ =>
+                        {
+                            lock (connectionGate)
+                            {
+                                if (!connected || !DriverSettings.UseAmbient) return;
+                                try { reader.Refresh(); }
+                                catch { tl?.LogMessage("Ambient", "Background refresh failed."); }
+                            }
+                        }, null, 0, 5000);
+                    }
+                    else
+                    {
+                        ambientTimer?.Dispose();
+                        ambientTimer = null;
+                    }
+                }
 
                 if (tl != null)
                 {
@@ -226,6 +249,7 @@ namespace WeatherWatcher2.ObservingConditions
                     "Dispose",
                     "Driver disposing");
 
+                Connected = false;
                 LocalServerHost.DecrementObjectCount();
                 LocalServerHost.ExitIf();
             }
@@ -252,7 +276,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                return "Reads weather conditions from Boltwood and/or Cumulus weather files.";
+                return "Reads Boltwood and Cumulus weather files, or AmbientWeather.net instead of Cumulus.";
             }
         }
 
@@ -264,7 +288,7 @@ namespace WeatherWatcher2.ObservingConditions
                  .GetExecutingAssembly()
                  .GetName()
                  .Version
-                 .ToString(2);
+                 .ToString(3);
             }
         }
 
@@ -312,8 +336,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.CloudCover;
+                return reader.ReadValue("CloudCover");
             }
         }
 
@@ -321,8 +344,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.DewPoint;
+                return reader.ReadValue("DewPoint");
             }
         }
 
@@ -330,8 +352,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.Humidity;
+                return reader.ReadValue("Humidity");
             }
         }
 
@@ -339,8 +360,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.Pressure;
+                return reader.ReadValue("Pressure");
             }
         }
 
@@ -348,8 +368,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.RainRate;
+                return reader.ReadValue("RainRate");
             }
         }
 
@@ -377,8 +396,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.SkyTemperature;
+                return reader.ReadValue("SkyTemperature");
             }
         }
 
@@ -396,8 +414,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.Temperature;
+                return reader.ReadValue("Temperature");
             }
         }
 
@@ -405,8 +422,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.WindDirection;
+                return reader.ReadValue("WindDirection");
             }
         }
 
@@ -414,8 +430,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.WindGust;
+                return reader.ReadValue("WindGust");
             }
         }
 
@@ -423,8 +438,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             get
             {
-                reader.Refresh();
-                return reader.Data.WindSpeed;
+                return reader.ReadValue("WindSpeed");
             }
         }
 
@@ -464,7 +478,7 @@ namespace WeatherWatcher2.ObservingConditions
                     throw new ASCOM.PropertyNotImplementedException(propertyName, false);
 
                 default:
-                    return 0;
+                    return reader.TimeSinceLastUpdate(propertyName);
             }
         }
 

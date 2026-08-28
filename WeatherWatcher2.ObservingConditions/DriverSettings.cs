@@ -1,81 +1,101 @@
-﻿using ASCOM.Utilities;
+using ASCOM.Utilities;
 using System;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace WeatherWatcher2.ObservingConditions
 {
     public static class DriverSettings
     {
-        public static string BoltwoodFile = "";
-        public static string CumulusFile = "";
-
-        public static double MaxWind = 20;
-        public static double MaxHumidity = 90;
-        public static double MinTemp = 0;
-        public static double MaxTemp = 35;
-
-        public static bool UseBoltwood = true;
-        public static bool UseCumulus = true;
-        public static bool EnableLogging = true;
+        private const string DriverId = "WeatherWatcher2.ObservingConditions";
+        public static string BoltwoodFile = @"C:\ProgramData\WeatherWatcher2\weatherdata.txt";
+        public static string CumulusFile = @"C:\Cumulus\realtime.txt";
+        public static double MaxWind = 20, MaxHumidity = 90, MinTemp = 0, MaxTemp = 35;
+        public static bool UseBoltwood = true, UseCumulus = true, EnableLogging = false;
+        public static bool UseAmbient = false;
+        public static string AmbientApplicationKey = "", AmbientApiKey = "", AmbientMacAddress = "";
+        public static int AmbientMaxAgeSeconds = 300;
 
         public static void Load()
         {
             try
             {
-                using (Profile profile = new Profile())
+                using (Profile p = new Profile())
                 {
-                    profile.DeviceType = "ObservingConditions";
-
-                    BoltwoodFile = profile.GetValue(
-                        "WeatherWatcher2.ObservingConditions",
-                        "BoltwoodFile",
-                        "",
-                        @"C:\ProgramData\WeatherWatcher2\weatherdata.txt");
-
-                    CumulusFile = profile.GetValue(
-                        "WeatherWatcher2.ObservingConditions",
-                        "CumulusFile",
-                        "",
-                        @"C:\Cumulus\realtime.txt");
-
-                    EnableLogging = Convert.ToBoolean(
-                        profile.GetValue(
-                            "WeatherWatcher2.ObservingConditions",
-                            "EnableLogging",
-                            "",
-                            "false"));
+                    p.DeviceType = "ObservingConditions";
+                    BoltwoodFile = p.GetValue(DriverId, "BoltwoodFile", "", BoltwoodFile);
+                    CumulusFile = p.GetValue(DriverId, "CumulusFile", "", CumulusFile);
+                    UseBoltwood = ReadBool(p, "UseBoltwood", true);
+                    UseCumulus = ReadBool(p, "UseCumulus", true);
+                    UseAmbient = ReadBool(p, "UseAmbient", false);
+                    EnableLogging = ReadBool(p, "EnableLogging", false);
+                    AmbientApplicationKey = Unprotect(p.GetValue(DriverId, "AmbientApplicationKeyProtected", "", ""));
+                    AmbientApiKey = Unprotect(p.GetValue(DriverId, "AmbientApiKeyProtected", "", ""));
+                    AmbientMacAddress = p.GetValue(DriverId, "AmbientMacAddress", "", "");
+                    int age;
+                    AmbientMaxAgeSeconds = int.TryParse(p.GetValue(DriverId, "AmbientMaxAgeSeconds", "", "300"), out age)
+                        && age >= 60 && age <= 3600 ? age : 300;
+                    MaxWind = ProfileManager.ReadDouble("MaxWind", 20);
+                    MaxHumidity = ProfileManager.ReadDouble("MaxHumidity", 90);
+                    MinTemp = ProfileManager.ReadDouble("MinTemp", 0);
+                    MaxTemp = ProfileManager.ReadDouble("MaxTemp", 35);
                 }
             }
-            catch (Exception)
+            catch
             {
-                // First install / ASCOM profile not registered yet
-                // Fall back to defaults so constructor does not fail
-
-                BoltwoodFile =
-                    @"C:\ProgramData\WeatherWatcher2\weatherdata.txt";
-
-                CumulusFile =
-                    @"C:\Cumulus\realtime.txt";
-
+                // Preserve first-install behavior when the ASCOM profile is not yet available.
+                // Do not switch an already selected Ambient source to Cumulus on a read failure.
                 EnableLogging = false;
             }
+        }
+        private static bool ReadBool(Profile p, string name, bool fallback)
+        {
+            bool value;
+            return bool.TryParse(p.GetValue(DriverId, name, "", fallback.ToString()), out value) ? value : fallback;
         }
 
         public static void Save()
         {
-            using (Profile profile = new Profile())
+            // Encrypt before writing any settings, so an encryption failure cannot enable a half-configured source.
+            string appKey = Protect(AmbientApplicationKey);
+            string apiKey = Protect(AmbientApiKey);
+            using (Profile p = new Profile())
             {
-                profile.DeviceType = "ObservingConditions";
-
-                profile.WriteValue(
-                    "WeatherWatcher2.ObservingConditions",
-                    "BoltwoodFile",
-                    BoltwoodFile);
-
-                profile.WriteValue(
-                    "WeatherWatcher2.ObservingConditions",
-                    "CumulusFile",
-                    CumulusFile);
+                p.DeviceType = "ObservingConditions";
+                p.WriteValue(DriverId, "BoltwoodFile", BoltwoodFile);
+                p.WriteValue(DriverId, "CumulusFile", CumulusFile);
+                p.WriteValue(DriverId, "UseBoltwood", UseBoltwood.ToString());
+                p.WriteValue(DriverId, "UseCumulus", UseCumulus.ToString());
+                p.WriteValue(DriverId, "EnableLogging", EnableLogging.ToString());
+                p.WriteValue(DriverId, "AmbientApplicationKeyProtected", appKey);
+                p.WriteValue(DriverId, "AmbientApiKeyProtected", apiKey);
+                p.WriteValue(DriverId, "AmbientMacAddress", AmbientMacAddress);
+                p.WriteValue(DriverId, "AmbientMaxAgeSeconds", AmbientMaxAgeSeconds.ToString(CultureInfo.InvariantCulture));
+                p.WriteValue(DriverId, "UseAmbient", UseAmbient.ToString());
+                p.WriteValue(DriverId, "MaxWind", MaxWind.ToString());
+                p.WriteValue(DriverId, "MaxHumidity", MaxHumidity.ToString());
+                p.WriteValue(DriverId, "MinTemp", MinTemp.ToString());
+                p.WriteValue(DriverId, "MaxTemp", MaxTemp.ToString());
             }
+        }
+
+        private static string Protect(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "" : Convert.ToBase64String(ProtectedData.Protect(
+                Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser));
+        }
+
+        private static string Unprotect(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            try
+            {
+                return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(value),
+                    null, DataProtectionScope.CurrentUser));
+            }
+            catch (CryptographicException) { return ""; }
+            catch (FormatException) { return ""; }
         }
     }
 }
