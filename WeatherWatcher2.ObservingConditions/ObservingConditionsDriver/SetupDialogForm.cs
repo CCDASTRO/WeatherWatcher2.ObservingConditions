@@ -45,7 +45,7 @@ namespace WeatherWatcher2.ObservingConditions
 
         private void InitializeAmbientControls()
         {
-            ClientSize = new System.Drawing.Size(570, 466);
+            ClientSize = new System.Drawing.Size(570, 500);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -118,8 +118,8 @@ namespace WeatherWatcher2.ObservingConditions
                 Font = new System.Drawing.Font(Font, System.Drawing.FontStyle.Bold)
             };
             Controls.Add(updateWarning);
-            btnOK.Location = new System.Drawing.Point(380, 431);
-            btnCancel.Location = new System.Drawing.Point(470, 431);
+            btnOK.Location = new System.Drawing.Point(380, 464);
+            btnCancel.Location = new System.Drawing.Point(470, 464);
             chkUseAmbient.CheckedChanged += (sender, args) => UpdateSourceControls();
         }
 

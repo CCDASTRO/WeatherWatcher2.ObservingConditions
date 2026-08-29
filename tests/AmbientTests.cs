@@ -68,6 +68,11 @@ internal static class AmbientTests
             var updateWarning = (System.Windows.Forms.Label)field("updateWarning");
             Check(updateWarning.Text.Contains("Close NINA") && updateWarning.ForeColor == System.Drawing.Color.Firebrick,
                 "Update installation warning");
+            var okButton = (System.Windows.Forms.Button)field("btnOK");
+            var cancelButton = (System.Windows.Forms.Button)field("btnCancel");
+            Check(!updateWarning.Bounds.IntersectsWith(okButton.Bounds) &&
+                  !updateWarning.Bounds.IntersectsWith(cancelButton.Bounds),
+                "Update warning must not overlap dialog buttons");
             form.ShowInTaskbar = false;
             form.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             form.Location = new System.Drawing.Point(-32000, -32000);
