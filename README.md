@@ -4,8 +4,14 @@ WeatherWatcher2 is an ASCOM Observing Conditions driver for Windows. It supplies
 weather and sky readings to ASCOM-compatible astronomy applications and writes a
 weather safety status file for external consumers.
 
-## Version 1.0.1
+## Version 1.0.3
 
+- Keeps the ASCOM setup dialog centered and owned by the foreground ASCOM client,
+  with topmost and taskbar fallbacks, so NINA cannot hide it.
+- Adds a setup-dialog reminder with a link to the GitHub releases page.
+- Warns users to close NINA before installing a WeatherWatcher update.
+
+## Version 1.0.1
 - Adds AmbientWeather.net as an optional alternative to Cumulus.
 - Retains the existing file readers and independent Boltwood selection.
 - Adds protected credentials, cached background API reads, and observation-age checks.

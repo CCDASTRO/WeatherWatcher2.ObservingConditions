@@ -60,6 +60,14 @@ internal static class AmbientTests
             var boltwood = (System.Windows.Forms.CheckBox)field("chkUseBoltwood");
             Check(ambient.Checked && !cumulus.Enabled && boltwood.Enabled, "Ambient UI source selection");
             Check(((System.Windows.Forms.TextBox)field("txtApiKey")).UseSystemPasswordChar, "API key mask");
+            Check(form.TopMost, "Setup dialog must remain above the calling application");
+            Check(form.ShowInTaskbar, "Setup dialog must remain discoverable on the taskbar");
+            Check(form.StartPosition == System.Windows.Forms.FormStartPosition.CenterScreen, "Setup dialog start position");
+            var updateLink = (System.Windows.Forms.LinkLabel)field("updateLink");
+            Check(updateLink.Text.Contains("GitHub") && updateLink.Text.Contains("updates"), "Update reminder link");
+            var updateWarning = (System.Windows.Forms.Label)field("updateWarning");
+            Check(updateWarning.Text.Contains("Close NINA") && updateWarning.ForeColor == System.Drawing.Color.Firebrick,
+                "Update installation warning");
             form.ShowInTaskbar = false;
             form.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             form.Location = new System.Drawing.Point(-32000, -32000);

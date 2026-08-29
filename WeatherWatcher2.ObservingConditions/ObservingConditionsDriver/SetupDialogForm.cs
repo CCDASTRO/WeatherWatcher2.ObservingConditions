@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 using ASCOM.Utilities;
 
@@ -39,12 +40,23 @@ namespace WeatherWatcher2.ObservingConditions
         private CheckBox chkUseAmbient;
         private TextBox txtApplicationKey, txtApiKey, txtMac;
         private NumericUpDown numAmbientAge;
+        private LinkLabel updateLink;
+        private Label updateWarning;
 
         private void InitializeAmbientControls()
         {
-            ClientSize = new System.Drawing.Size(570, 440);
+            ClientSize = new System.Drawing.Size(570, 466);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
+            MinimizeBox = false;
+            StartPosition = FormStartPosition.CenterScreen;
+            ShowInTaskbar = true;
+            TopMost = true;
+            Shown += (sender, args) =>
+            {
+                BringToFront();
+                Activate();
+            };
             chkUseAmbient = new CheckBox
             {
                 Text = "Use Ambient API instead of Cumulus",
@@ -70,8 +82,44 @@ namespace WeatherWatcher2.ObservingConditions
                        "Boltwood remains independent. Missing or stale Ambient data is unsafe.",
                 Location = new System.Drawing.Point(14, 371), Size = new System.Drawing.Size(540, 35)
             });
-            btnOK.Location = new System.Drawing.Point(380, 406);
-            btnCancel.Location = new System.Drawing.Point(470, 406);
+            updateLink = new LinkLabel
+            {
+                Text = "Check GitHub regularly for WeatherWatcher updates",
+                Location = new System.Drawing.Point(14, 412),
+                AutoSize = true
+            };
+            updateLink.LinkClicked += (sender, args) =>
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases",
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    tl?.LogMessageCrLf("OpenUpdatesPage", ex.ToString());
+                    MessageBox.Show(this,
+                        "Could not open the WeatherWatcher GitHub releases page.",
+                        "WeatherWatcher2 Updates",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            };
+            Controls.Add(updateLink);
+            updateWarning = new Label
+            {
+                Text = "Warning: Close NINA before installing a WeatherWatcher update.",
+                Location = new System.Drawing.Point(14, 438),
+                AutoSize = true,
+                ForeColor = System.Drawing.Color.Firebrick,
+                Font = new System.Drawing.Font(Font, System.Drawing.FontStyle.Bold)
+            };
+            Controls.Add(updateWarning);
+            btnOK.Location = new System.Drawing.Point(380, 431);
+            btnCancel.Location = new System.Drawing.Point(470, 431);
             chkUseAmbient.CheckedChanged += (sender, args) => UpdateSourceControls();
         }
 

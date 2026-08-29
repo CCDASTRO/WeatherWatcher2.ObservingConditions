@@ -109,9 +109,26 @@ namespace WeatherWatcher2.ObservingConditions
             }
         }
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        private sealed class WindowHandle : IWin32Window
+        {
+            internal WindowHandle(IntPtr handle)
+            {
+                Handle = handle;
+            }
+
+            public IntPtr Handle { get; private set; }
+        }
+
         public void SetupDialog()
         {
             Exception threadException = null;
+            // Capture the calling application's foreground window before switching to
+            // the dedicated STA thread. Making it the dialog owner prevents NINA or
+            // another ASCOM client from covering the setup window.
+            IntPtr ownerHandle = GetForegroundWindow();
 
             Thread uiThread = new Thread(() =>
             {
@@ -119,7 +136,10 @@ namespace WeatherWatcher2.ObservingConditions
                 {
                     using (SetupDialogForm form = new SetupDialogForm())
                     {
-                        form.ShowDialog();
+                        if (ownerHandle != IntPtr.Zero)
+                            form.ShowDialog(new WindowHandle(ownerHandle));
+                        else
+                            form.ShowDialog();
                     }
                 }
                 catch (Exception ex)
