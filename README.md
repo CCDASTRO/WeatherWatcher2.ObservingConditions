@@ -83,7 +83,7 @@ The existing file parsers and their supported producer formats are retained.
 To replace Cumulus with Ambient Weather:
 
 1. Ensure your station is uploading to AmbientWeather.net.
-2. Create an application key and an API key on your
+2. Follow [How to generate your Ambient API keys](#how-to-generate-your-ambient-api-keys) below to create both keys on your
    [Ambient account page](https://ambientweather.net/account).
 3. In the driver's setup dialog, select **Use Ambient API instead of Cumulus**.
 4. Enter both keys and the station MAC address, for example AA:BB:CC:DD:EE:FF.
@@ -99,6 +99,75 @@ enable settings and paths are saved independently.
 Keys are masked in setup and stored using Windows DPAPI for the current Windows
 user. Re-enter them if running the driver under another Windows account. Do not
 post keys in issues, screenshots, or source control.
+
+### How to generate your Ambient API keys
+
+**Two different keys are required.** Your personal API key authorizes access to
+your station data; an application key identifies the application making the
+request. Ambient's support pages also call the personal key a **User Key** or
+**Device Key**. WeatherWatcher labels that field **API key**.
+
+WeatherWatcher does not include a shared application key. With this version,
+each user supplies both keys in setup. You do not need to write software to
+configure WeatherWatcher, but you do need to complete Ambient's application-key
+creation step.
+
+#### 1. Create your personal API key
+
+1. Sign in to the [AmbientWeather.net account page](https://ambientweather.net/account)
+   with the account that owns your station. This is the weather dashboard account.
+2. Find the **API Keys** section and use its key-generation control.
+3. Copy the generated long key string. This is your **personal API key**; it goes
+   into WeatherWatcher's **API key** field.
+
+#### 2. Create a separate application key
+
+1. In the same API Keys area, look for the developer/application-key link.
+   The wording may be similar to: **Each developer also needs an application
+   key. Click here to create one.** Dashboard wording and layout can change.
+2. Follow that link and complete the requested application information. If asked
+   to describe the integration, use an accurate description such as:
+
+   > I am connecting my own Ambient Weather station to the WeatherWatcher2 ASCOM
+   > ObservingConditions driver so my astronomy software can read weather conditions.
+
+3. Submit the form and look for the resulting **application key** entry
+   Ambient creates. Copy its key string into WeatherWatcher's **Application key**
+   field.
+
+Both keys can look like long hexadecimal strings. The application key may appear
+as a second row in the same table, marked **(application key)**. Identify it by
+that label, not its row number: row order can vary, especially if you have created
+keys before. Do not paste the same personal key into both fields.
+
+#### 3. Enter the keys in WeatherWatcher
+
+| WeatherWatcher field | What to enter |
+| --- | --- |
+| Application key | The separate key identified as an application key |
+| API key | Your personal API/User/Device key |
+| Station MAC | Your station's MAC address, such as AA:BB:CC:DD:EE:FF; this is not a key |
+
+Select **Use Ambient API instead of Cumulus**, enter all three values, save, and
+reconnect your ASCOM client. Keep Boltwood enabled only if you use that file input.
+Neither key is needed when using only Cumulus or Boltwood.
+
+If you see only one key, revisit the application-key link rather than generating
+another personal key. If requests fail, check that the keys are in the correct
+fields, were copied completely without surrounding text, and belong to the
+intended integration/account; also verify the station MAC and that the station
+is uploading. WeatherWatcher limits requests to once per minute, so allow the
+next polling interval after correcting settings.
+
+Keep both keys private. Do not include them in screenshots, GitHub issues, or
+source control. If a key is exposed, replace/revoke it in Ambient and update
+WeatherWatcher's saved value.
+
+Official references:
+[Ambient's key-creation guide, including its video](https://ambientweather.com/faqs/question/view/id/1934/)
+and [Ambient REST API authentication documentation](https://github.com/ambient-weather/api-docs/blob/master/apiary.apib).
+These explain the two key types and account-based creation; the dashboard
+navigation hints above may differ as Ambient updates its interface.
 
 ### Data handling and safety
 
@@ -156,6 +225,7 @@ required before observatory deployment.
 The offline suite covers conversions, missing/invalid observations, caching,
 request failures, source switching, Boltwood coexistence, credential protection,
 and setup controls. It does not replace a live API or observatory acceptance test.
+
 ## Installation and client configuration
 
 Use Windows with ASCOM Platform 7 or later. Building from source also requires
