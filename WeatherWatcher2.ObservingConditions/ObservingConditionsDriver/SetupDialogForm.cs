@@ -21,6 +21,7 @@ namespace WeatherWatcher2.ObservingConditions
 
                 InitializeComponent();
                 InitializeAmbientControls();
+                InitializeRainCloudControls();
                 LoadSettings();
 
                 tl.LogMessage(
@@ -37,6 +38,22 @@ namespace WeatherWatcher2.ObservingConditions
             }
         }
 
+        private CheckBox chkRainCloud;
+        private TextBox txtRainPort;
+        private NumericUpDown numCloudLimit;
+        private void InitializeRainCloudControls()
+        {
+            ClientSize = new System.Drawing.Size(570, 635);
+            chkRainCloud = new CheckBox { Text = "Use Uno RainCloud instead of Boltwood rain/cloud input", AutoSize = true, Left = 14, Top = 465 };
+            txtRainPort = new TextBox { Left = 145, Top = 492, Width = 95 };
+            numCloudLimit = new NumericUpDown { Left = 430, Top = 492, Width = 95, Minimum = 0, Maximum = 100 };
+            chkRainCloud.CheckedChanged += (sender, args) => { chkUseBoltwood.Enabled = !chkRainCloud.Checked; txtBoltwood.Enabled = !chkRainCloud.Checked; btnBrowseBoltwood.Enabled = !chkRainCloud.Checked; };
+            Controls.Add(chkRainCloud); Controls.Add(txtRainPort); Controls.Add(numCloudLimit);
+            Controls.Add(new Label { Text = "Uno COM port", Left = 14, Top = 496, AutoSize = true });
+            Controls.Add(new Label { Text = "Max cloud estimate %", Left = 265, Top = 496, AutoSize = true });
+            Controls.Add(new Label { Text = "Faults, stale data and uncalibrated clouds are unsafe.\r\nFive-minute clear recovery. Requires updated WeatherWatcher SafetyMonitor.", Left = 14, Top = 528, Width = 540, Height = 44 });
+            btnOK.Top = btnCancel.Top = 594;
+        }
         private CheckBox chkUseAmbient;
         private TextBox txtApplicationKey, txtApiKey, txtMac;
         private NumericUpDown numAmbientAge;
@@ -150,6 +167,9 @@ namespace WeatherWatcher2.ObservingConditions
         }
         private void LoadSettings()
         {
+            chkRainCloud.Checked = DriverSettings.UseRainCloud;
+            txtRainPort.Text = DriverSettings.RainCloudPort;
+            numCloudLimit.Value = (decimal)Math.Max(0, Math.Min(100, DriverSettings.RainCloudMaxCloud));
             chkUseAmbient.Checked = DriverSettings.UseAmbient;
             txtApplicationKey.Text = DriverSettings.AmbientApplicationKey;
             txtApiKey.Text = DriverSettings.AmbientApiKey;
@@ -257,6 +277,8 @@ namespace WeatherWatcher2.ObservingConditions
         }
         private void btnOK_Click(object sender, EventArgs e)
         {
+            if (RainCloudHub.InUse) { MessageBox.Show(this, "Disconnect all WeatherWatcher clients before changing settings."); return; }
+            if (chkRainCloud.Checked && !System.Text.RegularExpressions.Regex.IsMatch(txtRainPort.Text.Trim(), @"^COM[1-9][0-9]*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) { MessageBox.Show(this, "Enter the Uno COM port, for example COM5."); return; }
             if (chkUseAmbient.Checked &&
                 (string.IsNullOrWhiteSpace(txtApplicationKey.Text) || string.IsNullOrWhiteSpace(txtApiKey.Text) ||
                  !System.Text.RegularExpressions.Regex.IsMatch(txtMac.Text.Trim(), @"^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$")))
@@ -265,6 +287,9 @@ namespace WeatherWatcher2.ObservingConditions
                     "Ambient Weather setup", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            DriverSettings.UseRainCloud = chkRainCloud.Checked;
+            DriverSettings.RainCloudPort = txtRainPort.Text.Trim().ToUpperInvariant();
+            DriverSettings.RainCloudMaxCloud = (double)numCloudLimit.Value;
             DriverSettings.UseAmbient = chkUseAmbient.Checked;
             DriverSettings.AmbientApplicationKey = txtApplicationKey.Text.Trim();
             DriverSettings.AmbientApiKey = txtApiKey.Text.Trim();

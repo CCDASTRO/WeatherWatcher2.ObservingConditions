@@ -17,7 +17,8 @@ namespace WeatherWatcher2.ObservingConditions
     [ProgId("WeatherWatcher2.ObservingConditions.ObservingConditions")]
     public class ObservingConditions : IObservingConditionsV2
     {
-        private bool connected;
+        private bool connected, rainAcquired;
+        private int disposed;
         private System.Threading.Timer ambientTimer;
         private readonly object connectionGate = new object();
         private readonly TraceLogger tl;
@@ -174,7 +175,9 @@ namespace WeatherWatcher2.ObservingConditions
             {
                 lock (connectionGate)
                 {
+                    if (value && disposed != 0) throw new ObjectDisposedException("ObservingConditions");
                     if (connected == value) return;
+                    if (value && DriverSettings.UseRainCloud) { RainCloudHub.Acquire(); rainAcquired = true; }
                     connected = value;
                     if (value)
                     {
@@ -182,16 +185,17 @@ namespace WeatherWatcher2.ObservingConditions
                         {
                             lock (connectionGate)
                             {
-                                if (!connected || !DriverSettings.UseAmbient) return;
+                                if (!connected || (!DriverSettings.UseAmbient && !DriverSettings.UseRainCloud)) return;
                                 try { reader.Refresh(); }
                                 catch { tl?.LogMessage("Ambient", "Background refresh failed."); }
                             }
-                        }, null, 0, 5000);
+                        }, null, 0, 2000);
                     }
                     else
                     {
                         ambientTimer?.Dispose();
                         ambientTimer = null;
+                        if (rainAcquired) { rainAcquired = false; RainCloudHub.Release(); }
                     }
                 }
 
@@ -263,6 +267,7 @@ namespace WeatherWatcher2.ObservingConditions
 
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref disposed, 1) != 0) return;
             try
             {
                 tl?.LogMessage(

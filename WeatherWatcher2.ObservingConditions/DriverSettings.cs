@@ -13,6 +13,10 @@ namespace WeatherWatcher2.ObservingConditions
         public static string CumulusFile = @"C:\Cumulus\realtime.txt";
         public static double MaxWind = 20, MaxHumidity = 90, MinTemp = 0, MaxTemp = 35;
         public static bool UseBoltwood = true, UseCumulus = true, EnableLogging = false;
+        public static bool UseRainCloud = false;
+        public static string RainCloudPort = "COM5";
+        public static double RainCloudMaxCloud = 30;
+        public static int RainCloudRecoverySeconds = 300;
         public static bool UseAmbient = false;
         public static string AmbientApplicationKey = "", AmbientApiKey = "", AmbientMacAddress = "";
         public static int AmbientMaxAgeSeconds = 300;
@@ -29,6 +33,11 @@ namespace WeatherWatcher2.ObservingConditions
                     UseBoltwood = ReadBool(p, "UseBoltwood", true);
                     UseCumulus = ReadBool(p, "UseCumulus", true);
                     UseAmbient = ReadBool(p, "UseAmbient", false);
+                    UseRainCloud = ReadBool(p, "UseRainCloud", false);
+                    RainCloudPort = p.GetValue(DriverId, "RainCloudPort", "", "COM5");
+                    double cloudLimit;
+                    RainCloudMaxCloud = double.TryParse(p.GetValue(DriverId, "RainCloudMaxCloud", "", "30"), NumberStyles.Float, CultureInfo.InvariantCulture, out cloudLimit) && !double.IsNaN(cloudLimit) && cloudLimit >= 0 && cloudLimit <= 100 ? cloudLimit : 30;
+                    RainCloudRecoverySeconds = 300;
                     EnableLogging = ReadBool(p, "EnableLogging", false);
                     AmbientApplicationKey = Unprotect(p.GetValue(DriverId, "AmbientApplicationKeyProtected", "", ""));
                     AmbientApiKey = Unprotect(p.GetValue(DriverId, "AmbientApiKeyProtected", "", ""));
@@ -73,6 +82,9 @@ namespace WeatherWatcher2.ObservingConditions
                 p.WriteValue(DriverId, "AmbientMacAddress", AmbientMacAddress);
                 p.WriteValue(DriverId, "AmbientMaxAgeSeconds", AmbientMaxAgeSeconds.ToString(CultureInfo.InvariantCulture));
                 p.WriteValue(DriverId, "UseAmbient", UseAmbient.ToString());
+                p.WriteValue(DriverId, "UseRainCloud", UseRainCloud.ToString());
+                p.WriteValue(DriverId, "RainCloudPort", RainCloudPort);
+                p.WriteValue(DriverId, "RainCloudMaxCloud", RainCloudMaxCloud.ToString(CultureInfo.InvariantCulture));
                 p.WriteValue(DriverId, "MaxWind", MaxWind.ToString());
                 p.WriteValue(DriverId, "MaxHumidity", MaxHumidity.ToString());
                 p.WriteValue(DriverId, "MinTemp", MinTemp.ToString());

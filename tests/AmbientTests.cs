@@ -233,6 +233,7 @@ internal static class AmbientTests
         Check((string)unprotect.Invoke(null, new object[] { encrypted }) == "test-only-key", "Credential roundtrip");
         Check((string)unprotect.Invoke(null, new object[] { "not base64!" }) == "", "Corrupt credential handling");
         CheckSetupDialog();
+        RainCloudTests.Run(Check);
         Console.WriteLine("PASS: " + checks + " checks (no live API or production safety-file writes).");
     }
 }

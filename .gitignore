@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Combined suite build products
+dist/
+objRainCloud/
+
+# Keep local strong-name signing material out of this repository
+SafetyMonitor/ASCOMDriverTemplate.snk
