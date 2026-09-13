@@ -2,7 +2,7 @@
 
 One repository and one Windows installer for **WeatherWatcher ObservingConditions**, **WeatherWatcher SafetyMonitor**, and the optional **RainCloud Arduino sensor**.
 
-The current development suite pairs WeatherWatcher **1.1.0** with SafetyMonitor **1.3.0**. It is not yet hardware-qualified or installation-tested. Existing stable releases remain available in [Releases](https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases).
+The current development suite pairs WeatherWatcher **1.1.0** with SafetyMonitor **1.3.1**. It is not yet hardware-qualified or installation-tested. Existing stable releases remain available in [Releases](https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases).
 
 ## With or without the optional sensor
 
@@ -40,3 +40,6 @@ Install Visual Studio 2022 Community with .NET desktop build tools and the .NET 
 126 offline checks pass. They do not open physical serial ports, call live weather APIs or write production safety files. Uno compilation, physical commissioning, installation and upgrade testing remain outstanding. These are development results, not ASCOM certification.
 
 The previous [SNFSafety repository](https://github.com/CCDASTRO/SNFSafety) remains available for historical source and releases. Future combined development lives here. Older standalone uninstall entries may remain after upgrading; do not use them to remove the shared safety DLL after installing this suite.
+
+### Preview 2 installer correction
+Suite installer 1.1.1 fixes SafetyMonitor Release architecture to AnyCPU (SafetyMonitor 1.3.1). Installation completed successfully on the development PC, with 32-bit and 64-bit COM activation/disposal verified. Hardware commissioning remains outstanding. A build guard now rejects architecture-incompatible SafetyMonitor packages.

@@ -1,6 +1,6 @@
 # ASCOM integration — development build
 
-Implemented source versions: WeatherWatcher2 ObservingConditions **1.1.0.0** and WeatherWatcher SafetyMonitor **1.3.0.0**. Both were built successfully; 126 checks passed without opening a serial port, making a live weather API request or writing production safety files. This is not a hardware-qualified release and is published as a development prerelease, not installed or hardware-qualified.
+Implemented source versions: WeatherWatcher2 ObservingConditions **1.1.0.0** and WeatherWatcher SafetyMonitor **1.3.1.0**. Both were built successfully; 126 checks passed without opening a serial port, making a live weather API request or writing production safety files. This is not a hardware-qualified release and is published as a development prerelease, not installed or hardware-qualified.
 
 ## Data path
 Uno USB at 9600 baud -> one shared serial reader in the WeatherWatcher local server -> ObservingConditions sky/cloud properties and combined safety decision -> timestamped safety file -> WeatherWatcher SafetyMonitor -> NINA.
@@ -23,7 +23,7 @@ If only the SafetyMonitor is connected, it does not open the Uno or launch Weath
 ## Build
 Use Visual Studio MSBuild with ASCOM Developer Components and .NET Framework 4.7.2 targeting pack installed. Run `build.ps1` from this project. The safety project must use a fresh intermediate directory and `RegisterForComInterop=false`; do not register test builds as a side effect of compilation.
 
-Source is consolidated under `WeatherWatcher2.ObservingConditions/` and `SafetyMonitor/`, with Uno firmware in `firmware/RainCloudUno/`. The `dist` folder contains both a development ZIP and a combined Inno installer, CCDASTRO.WeatherWatcher-Safety.Setup-1.1.0-development.exe. It installs WeatherWatcher 1.1.0 and SafetyMonitor 1.3.0 together and preserves ASCOM profile settings. RainCloud defaults to disabled. The installer has been compiled but not installed or upgrade-tested. Older standalone SafetyMonitor uninstall entries may remain; do not run those after installing the suite, as they can remove the shared safety DLL. Retain the working installed drivers until bench acceptance passes.
+Source is consolidated under `WeatherWatcher2.ObservingConditions/` and `SafetyMonitor/`, with Uno firmware in `firmware/RainCloudUno/`. The `dist` folder contains both a development ZIP and a combined Inno installer, CCDASTRO.WeatherWatcher-Safety.Setup-1.1.1-development.exe. It installs WeatherWatcher 1.1.0 and SafetyMonitor 1.3.1 together and preserves ASCOM profile settings. RainCloud defaults to disabled. The installer has been compiled but not installed or upgrade-tested. Older standalone SafetyMonitor uninstall entries may remain; do not run those after installing the suite, as they can remove the shared safety DLL. Retain the working installed drivers until bench acceptance passes.
 
 ## Next hardware checks
 1. Upload and verify the Uno sketch; test both relay states, power loss and IR unplug/recovery.

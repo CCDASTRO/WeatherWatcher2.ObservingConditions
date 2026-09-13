@@ -4,8 +4,8 @@
 [Setup]
 AppId={{185dafc9-a1ef-46fb-93fc-e0e8735d9890}}
 AppName=CCDASTRO WeatherWatcher and SafetyMonitor
-AppVersion=1.1.0
-AppVerName=WeatherWatcher 1.1.0 and SafetyMonitor 1.3.0 (development)
+AppVersion=1.1.1
+AppVerName=WeatherWatcher 1.1.0 and SafetyMonitor 1.3.1 (development)
 AppPublisher=CCDASTRO
 DefaultDirName={commoncf32}\ASCOM\ObservingConditions\WeatherWatcher2
 DisableDirPage=yes
@@ -13,7 +13,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 MinVersion=10.0
 OutputDir=..\dist
-OutputBaseFilename=CCDASTRO.WeatherWatcher-Safety.Setup-1.1.0-development
+OutputBaseFilename=CCDASTRO.WeatherWatcher-Safety.Setup-1.1.1-development
 Compression=lzma2
 SolidCompression=yes
 CloseApplications=yes
