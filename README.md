@@ -33,6 +33,8 @@ The sensor's dry recovery and Windows clear recovery each take five minutes. Fau
 
 [Usage guide](docs/weatherwatcher-guide.html) · [ASCOM integration](docs/RainCloud/ASCOM-INTEGRATION.md) · [Wiring and parts](docs/RainCloud/HARDWARE.md) · [USB protocol](docs/RainCloud/PROTOCOL.md) · [Bench checklist](docs/RainCloud/BENCH-TEST.md)
 
+RainCloud wiring: [view the circuit diagram](docs/RainCloud/images/raincloud-wiring.svg), [view the Fritzing layout](docs/RainCloud/images/raincloud-fritzing-layout.png), or [download the editable Fritzing project](docs/RainCloud/raincloud-wiring.fzz). Confirm pin labels and follow the [hardware guide](docs/RainCloud/HARDWARE.md) before assembly.
+
 ## Build and validation
 
 Install Visual Studio 2022 Community with .NET desktop build tools and the .NET Framework 4.7.2 targeting pack, ASCOM Developer Components, and Inno Setup 6. Place your existing SafetyMonitor `ASCOMDriverTemplate.snk` locally in `SafetyMonitor/` before building; signing material is intentionally excluded from this repository. Run `./build.ps1`; adjust the MSBuild path if using another Visual Studio edition. The script builds both drivers without COM registration, runs tests and creates the installer under `dist/`.

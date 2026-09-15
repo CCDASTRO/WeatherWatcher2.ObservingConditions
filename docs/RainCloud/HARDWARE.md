@@ -1,5 +1,21 @@
 # Hardware design
 
+## Wiring diagram
+
+![RainCloud device wiring reference with Uno artwork and sensor photographs](images/raincloud-wiring.svg)
+
+[Editable SVG](images/raincloud-wiring.svg) · [PNG image](images/raincloud-wiring.png). Device images and separate, noncrossing connection callouts show the infrared sensor, rain relay and isolated supply monitor. Follow the labeled pin names, not their positions on the sheet. The same Uno is shown twice for clarity. The GY-906 photograph shows a reference module; verify your own module's markings.
+
+### Editable Fritzing project
+
+[Download raincloud-wiring.fzz](raincloud-wiring.fzz) · [Fritzing layout preview](images/raincloud-fritzing-layout.png)
+
+Open the `.fzz` in Fritzing and select **Breadboard** for embedded device images and color-coded, editable right-angle wires. **Schematic** contains the same connections using labeled blocks. The project includes its custom parts; no separate part download is needed. It uses one Uno representation, with the pullups at left, sensors at right, and the isolated supply circuit below. Connector callouts identify pin names; they are not the devices' physical pin positions. Crossings without joined endpoints are not electrical junctions. There is no PCB fabrication layout.
+
+Both views were successfully exported by the installed Fritzing application and visually inspected. Automated checks confirm that all 21 original connections are preserved, without merging unrelated nets. This verifies the drawing, not operation of the hardware.
+
+Device image sources: [Fritzing Uno artwork](https://github.com/fritzing/fritzing-parts) (CC BY-SA), [Hydreon RG-11 board photograph](https://rainsensors.com/products/rg-11/), and [ProtoSupplies GY-906 photograph](https://protosupplies.com/product/gy-906-mlx90614-non-contact-precision-thermometer-module/). Photographs retain their original appearance and attribution; no ownership or endorsement is implied.
+
 ## Parts
 Uno R3, USB cable, GY-906, RG-11, regulated 12 V sensor supply with a fused branch, PC817 optocoupler, 2.2k ohm 1/4 W LED resistor, three 10k pullups, outdoor cable, terminal blocks, sealed enclosure and cable glands. The power monitor below is designed for regulated **12 V**, not the full RG-11 input range. Uno remains USB powered.
 
