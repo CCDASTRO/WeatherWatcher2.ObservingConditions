@@ -1,14 +1,15 @@
 # Bench acceptance checks — no observatory movement
-1. Compile for Uno R3 with the actual installed libraries. Confirm Wire timeout support.
-2. Open serial at 9600: valid JSON every two seconds; identity and getd commands work. Confirm startup cannot report dry.
-3. With power-monitor and relay circuits connected, confirm dry only after startup and five-minute recovery.
-4. Wet-test the RG-11 per its manual. Confirm rain promptly; confirm recovery restarts after every rain event.
-5. Remove sensor power: fault, even if its relay returns to the dry position. Restore: recovery required.
-6. Disconnect COM, NC, NO and power-monitor signal individually. Test NC/NO disconnections in BOTH relay states; document inactive-wire limitations. Both-open/closed must be fault.
-7. Disconnect MLX90614 and reconnect: ir_ok false and null temperatures/cloud estimate on failure; no retained clear result. Check stuck SDA/SCL recovers via Wire timeout.
-8. Send oversized/unknown commands and continuous bytes; sensor sampling must continue. Commands cannot change outputs or calibration.
-9. Disconnect USB: future host reader must become unsafe within its stale timeout. Reconnect resets host recovery.
-10. Compare sky/delta readings on multiple clear/overcast nights before enabling cloud calibration. Verify field of view and enclosure thermal influence.
-11. Run a prolonged outdoor logging trial alongside independent weather protection before enabling automated use.
 
-Status: design and sketch prepared; hardware not available for these checks. No hardware test results are claimed.
+1. Compile for Uno R3 using Arduino AVR Boards; no IR, Wire or Adafruit libraries should be required.
+2. At 9600 baud, verify valid rain-only JSON every two seconds and on rain-state changes. Check `get#` and `getd#`. Startup must not be dry for the first 30 seconds.
+3. Connect the power monitor and relay. Verify dry contacts start the configured Windows dry-out countdown; the Arduino has no second five-minute hold.
+4. Wet-test RG-11 according to its manual. Verify an immediate `rain` report, UNSAFE safety output and reset of the dry-out countdown. Repeat during recovery.
+5. Remove RG-11 power even while its relay rests dry: UNSAFE. Test COM, NC, NO and power-monitor signal disconnections in both relay states. Record the inactive-contact-wire limitation described in HARDWARE.md.
+6. Disconnect USB and stop the WeatherWatcher process separately. Verify serial and safety-file timeouts produce UNSAFE. Reconnect requires recovery.
+7. Confirm removing the IR module has no effect on rain protection. SkyTemperature must report not implemented; RainRate must not be invented from relay state.
+8. Configure actual observatory coordinates. Verify CloudCover and the NOAA observation timestamp against the downloaded mask. Check overcast, missing coordinates, Internet disconnection, server failure and stale cloud data: none may veto a dry result by itself. Existing separately configured weather-source failures/limits retain their behavior.
+9. Send oversized/unknown serial commands and continuous input; rain sampling must continue. No commands change outputs or timing settings.
+10. In a controlled automation test, verify UNSAFE prohibits opening a closed dome and causes existing automation to close an open dome. Include rain during a pending NOAA request. Measure total latency including the client's SafetyMonitor polling and physical dome travel.
+11. Run an outdoor comparison trial alongside existing protection before deploying unattended.
+
+Automated parser, NOAA, ASCOM and compilation checks do not replace wet testing, wiring verification or end-to-end dome testing. No physical hardware or dome test is claimed by this change.

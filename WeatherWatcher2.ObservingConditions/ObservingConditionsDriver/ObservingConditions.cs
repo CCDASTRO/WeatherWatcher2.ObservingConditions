@@ -18,7 +18,7 @@ namespace WeatherWatcher2.ObservingConditions
     public class ObservingConditions : IObservingConditionsV2
     {
         private bool connected, rainAcquired;
-        private int disposed;
+        private int disposed, rainRefreshQueued;
         private System.Threading.Timer ambientTimer;
         private readonly object connectionGate = new object();
         private readonly TraceLogger tl;
@@ -179,8 +179,10 @@ namespace WeatherWatcher2.ObservingConditions
                     if (connected == value) return;
                     if (value && DriverSettings.UseRainCloud) { RainCloudHub.Acquire(); rainAcquired = true; }
                     connected = value;
+                    reader.NotificationsActive = value;
                     if (value)
                     {
+                        if (rainAcquired) RainCloudHub.Changed += RainChanged;
                         ambientTimer = new System.Threading.Timer(_ =>
                         {
                             lock (connectionGate)
@@ -193,6 +195,7 @@ namespace WeatherWatcher2.ObservingConditions
                     }
                     else
                     {
+                        RainCloudHub.Changed -= RainChanged;
                         ambientTimer?.Dispose();
                         ambientTimer = null;
                         if (rainAcquired) { rainAcquired = false; RainCloudHub.Release(); }
@@ -206,6 +209,22 @@ namespace WeatherWatcher2.ObservingConditions
                         value ? "Connected" : "Disconnected");
                 }
             }
+        }
+
+        // The serial reader only queues work, so disconnect cannot deadlock while joining it.
+        private void RainChanged()
+        {
+            if (Interlocked.Exchange(ref rainRefreshQueued, 1) != 0) return;
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                Interlocked.Exchange(ref rainRefreshQueued, 0);
+                lock (connectionGate)
+                {
+                    if (!connected) return;
+                    try { reader.Refresh(); }
+                    catch (Exception ex) { tl?.LogMessage("RG-11 refresh failure", ex.Message); }
+                }
+            });
         }
 
         public void Connect()

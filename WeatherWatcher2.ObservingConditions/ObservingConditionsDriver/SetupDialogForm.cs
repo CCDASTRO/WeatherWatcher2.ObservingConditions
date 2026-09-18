@@ -38,21 +38,43 @@ namespace WeatherWatcher2.ObservingConditions
             }
         }
 
+        private PushoverSettings pushoverSettings;
         private CheckBox chkRainCloud;
         private TextBox txtRainPort;
-        private NumericUpDown numCloudLimit;
+        private NumericUpDown numDryDelay, numNoaaPoll, numNoaaAge, numNoaaRadius;
+        private TextBox txtLatitude, txtLongitude;
         private void InitializeRainCloudControls()
         {
-            ClientSize = new System.Drawing.Size(570, 635);
-            chkRainCloud = new CheckBox { Text = "Use Uno RainCloud instead of Boltwood rain/cloud input", AutoSize = true, Left = 14, Top = 465 };
+            ClientSize = new System.Drawing.Size(570, 805);
+            chkRainCloud = new CheckBox { Text = "Use Arduino RG-11 rain protection and NOAA cloud information", AutoSize = true, Left = 14, Top = 465 };
             txtRainPort = new TextBox { Left = 145, Top = 492, Width = 95 };
-            numCloudLimit = new NumericUpDown { Left = 430, Top = 492, Width = 95, Minimum = 0, Maximum = 100 };
+            numDryDelay = new NumericUpDown { Left = 430, Top = 492, Width = 95, Minimum = 0, Maximum = 3600 };
             chkRainCloud.CheckedChanged += (sender, args) => { chkUseBoltwood.Enabled = !chkRainCloud.Checked; txtBoltwood.Enabled = !chkRainCloud.Checked; btnBrowseBoltwood.Enabled = !chkRainCloud.Checked; };
-            Controls.Add(chkRainCloud); Controls.Add(txtRainPort); Controls.Add(numCloudLimit);
+            Controls.Add(chkRainCloud); Controls.Add(txtRainPort); Controls.Add(numDryDelay);
             Controls.Add(new Label { Text = "Uno COM port", Left = 14, Top = 496, AutoSize = true });
-            Controls.Add(new Label { Text = "Max cloud estimate %", Left = 265, Top = 496, AutoSize = true });
-            Controls.Add(new Label { Text = "Faults, stale data and uncalibrated clouds are unsafe.\r\nFive-minute clear recovery. Requires updated WeatherWatcher SafetyMonitor.", Left = 14, Top = 528, Width = 540, Height = 44 });
-            btnOK.Top = btnCancel.Top = 594;
+            Controls.Add(new Label { Text = "RG-11 dry-out (sec)", Left = 265, Top = 496, AutoSize = true });
+            Controls.Add(new Label { Text = "Wet, fault or lost Arduino connection = UNSAFE. Clouds are informational.\r\nRequires WeatherWatcher SafetyMonitor with WW2RC1 support.", Left = 14, Top = 528, Width = 540, Height = 44 });
+            Controls.Add(new Label { Text = "NOAA GOES-East cloud mask (latitude north / longitude east positive)", Left = 14, Top = 576, AutoSize = true });
+            txtLatitude = AddAmbientText("Latitude (degrees)", 600, false);
+            txtLongitude = AddAmbientText("Longitude (degrees)", 630, false);
+            numNoaaRadius = AddNoaaNumber("Sampling radius (km)", 660, 5, 100);
+            numNoaaPoll = AddNoaaNumber("NOAA poll (sec)", 690, 600, 3600);
+            numNoaaAge = AddNoaaNumber("Stale after (sec)", 720, 600, 86400);
+            var pushButton = new Button { Text = "Cloud notifications...", Left = 320, Top = 686, Width = 225, Height = 30 };
+            pushButton.Click += (sender, args) => {
+                using (var dialog = new PushoverSetupForm(pushoverSettings))
+                    if (dialog.ShowDialog(this) == DialogResult.OK) pushoverSettings = dialog.Settings;
+            };
+            Controls.Add(pushButton);
+            Controls.Add(new Label { Text = "Optional Pushover advisories.\r\nNever changes safety status.", Left = 320, Top = 724, Width = 230, Height = 32 });
+            btnOK.Top = btnCancel.Top = 766;
+        }
+        private NumericUpDown AddNoaaNumber(string label, int top, int minimum, int maximum)
+        {
+            Controls.Add(new Label { Text = label, Left = 14, Top = top + 3, AutoSize = true });
+            var number = new NumericUpDown { Left = 180, Top = top, Width = 100, Minimum = minimum, Maximum = maximum };
+            Controls.Add(number);
+            return number;
         }
         private CheckBox chkUseAmbient;
         private TextBox txtApplicationKey, txtApiKey, txtMac;
@@ -167,9 +189,15 @@ namespace WeatherWatcher2.ObservingConditions
         }
         private void LoadSettings()
         {
+            pushoverSettings = DriverSettings.Pushover.Copy();
             chkRainCloud.Checked = DriverSettings.UseRainCloud;
             txtRainPort.Text = DriverSettings.RainCloudPort;
-            numCloudLimit.Value = (decimal)Math.Max(0, Math.Min(100, DriverSettings.RainCloudMaxCloud));
+            numDryDelay.Value = DriverSettings.RainCloudRecoverySeconds;
+            txtLatitude.Text = double.IsNaN(DriverSettings.ObservatoryLatitude) ? "" : DriverSettings.ObservatoryLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            txtLongitude.Text = double.IsNaN(DriverSettings.ObservatoryLongitude) ? "" : DriverSettings.ObservatoryLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            numNoaaRadius.Value = (decimal)DriverSettings.NoaaRadiusKm;
+            numNoaaPoll.Value = DriverSettings.NoaaPollSeconds;
+            numNoaaAge.Value = DriverSettings.NoaaStaleSeconds;
             chkUseAmbient.Checked = DriverSettings.UseAmbient;
             txtApplicationKey.Text = DriverSettings.AmbientApplicationKey;
             txtApiKey.Text = DriverSettings.AmbientApiKey;
@@ -287,9 +315,23 @@ namespace WeatherWatcher2.ObservingConditions
                     "Ambient Weather setup", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            double latitude = double.NaN, longitude = double.NaN;
+            if (txtLatitude.Text.Trim().Length != 0 || txtLongitude.Text.Trim().Length != 0)
+            {
+                if (!double.TryParse(txtLatitude.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out latitude) ||
+                    !double.TryParse(txtLongitude.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out longitude) ||
+                    !(latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180))
+                { MessageBox.Show(this, "Enter latitude -90 to 90 and longitude -180 to 180 using a decimal point, or leave both blank for rain-only operation."); return; }
+            }
+            if (numNoaaAge.Value < numNoaaPoll.Value) { MessageBox.Show(this, "NOAA stale timeout must be at least the polling interval."); return; }
+            DriverSettings.ObservatoryLatitude = latitude;
+            DriverSettings.ObservatoryLongitude = longitude;
+            DriverSettings.NoaaRadiusKm = (double)numNoaaRadius.Value;
+            DriverSettings.NoaaPollSeconds = (int)numNoaaPoll.Value;
+            DriverSettings.NoaaStaleSeconds = (int)numNoaaAge.Value;
             DriverSettings.UseRainCloud = chkRainCloud.Checked;
             DriverSettings.RainCloudPort = txtRainPort.Text.Trim().ToUpperInvariant();
-            DriverSettings.RainCloudMaxCloud = (double)numCloudLimit.Value;
+            DriverSettings.RainCloudRecoverySeconds = (int)numDryDelay.Value;
             DriverSettings.UseAmbient = chkUseAmbient.Checked;
             DriverSettings.AmbientApplicationKey = txtApplicationKey.Text.Trim();
             DriverSettings.AmbientApiKey = txtApiKey.Text.Trim();
@@ -314,6 +356,7 @@ namespace WeatherWatcher2.ObservingConditions
             DriverSettings.UseCumulus = chkUseCumulus.Checked;
             DriverSettings.EnableLogging = chkEnableLogging.Checked;
 
+            DriverSettings.Pushover = pushoverSettings.Copy();
             try { DriverSettings.Save(); }
             catch
             {

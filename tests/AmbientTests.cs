@@ -234,6 +234,8 @@ internal static class AmbientTests
         Check((string)unprotect.Invoke(null, new object[] { "not base64!" }) == "", "Corrupt credential handling");
         CheckSetupDialog();
         RainCloudTests.Run(Check);
-        Console.WriteLine("PASS: " + checks + " checks (no live API or production safety-file writes).");
+        NoaaTests.Run(Check);
+        PushoverTests.Run(Check);
+        Console.WriteLine("PASS: " + checks + " checks (no production safety-file writes; live NOAA runs only when explicitly enabled).");
     }
 }

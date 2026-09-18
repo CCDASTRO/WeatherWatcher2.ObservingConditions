@@ -1,32 +1,36 @@
 # ASCOM integration — development build
 
-Implemented source versions: WeatherWatcher2 ObservingConditions **1.1.0.0** and WeatherWatcher SafetyMonitor **1.3.1.0**. Both were built successfully; 126 checks passed without opening a serial port, making a live weather API request or writing production safety files. This is not a hardware-qualified release and is published as a development prerelease, not installed or hardware-qualified.
+WeatherWatcher ObservingConditions 1.2.1 and the existing WeatherWatcher SafetyMonitor 1.3.1 preserve the local-server and `WW2RC1` safety-file architecture. The SafetyMonitor implementation and protocol do not need modification for this change.
 
-## Data path
-Uno USB at 9600 baud -> one shared serial reader in the WeatherWatcher local server -> ObservingConditions sky/cloud properties and combined safety decision -> timestamped safety file -> WeatherWatcher SafetyMonitor -> NINA.
+## Data and safety paths
 
-In WeatherWatcher setup, enable **Use Uno RainCloud instead of Boltwood rain/cloud input**, enter the Uno COM port and set the maximum cloud estimate. Existing Ambient/Cumulus weather inputs stay in use. This input overrides Boltwood rain/cloud data while enabled. Do not run Arduino Serial Monitor while WeatherWatcher owns that port.
+- Arduino RG-11 + power/contact monitoring → shared USB reader → rain safety with configurable dry-out → combined existing weather safety → timestamped safety file → SafetyMonitor → existing dome automation.
+- NOAA GOES-East ABI Level-2 cloud mask → background Windows retrieval/decoding → shared cache → ASCOM CloudCover. There is no NOAA-to-safety connection.
 
-The Uno must be loaded and calibrated before the system can report safe. The RG-11 dry hold runs on the board; a separate five-minute clear recovery runs in the Windows reader. Faults and reconnects restart recovery. Cloud percentages represent the sensor's calibrated field of view, not measured whole-sky coverage.
+Select **Use Arduino RG-11 rain protection and NOAA cloud information** in setup. It replaces the former Arduino IR/cloud mode and, as before, takes precedence over Boltwood. Existing Ambient/Cumulus inputs and independent wind, humidity, temperature and selected-source health checks remain. NOAA failure does not create a new safety veto; an independently selected Ambient API source still retains its existing failure behavior.
 
-SkyTemperature and CloudCover expose valid Uno values. Invalid/stale readings throw an ASCOM error. RainRate is not synthesized from the relay, and air temperature is not replaced by the IR chip temperature. Other weather measurements and their limits remain part of the combined decision.
+RG-11 wet/rain, invalid contacts, lost power, malformed serial data and communication expiry are unsafe. Valid dry data must persist for the configured delay (default 300 seconds). Rain state changes enqueue an immediate safety refresh without waiting for the two-second background heartbeat. NOAA never blocks the serial reader or an ASCOM call. Actual closure timing also depends on the automation client's polling and dome movement.
+
+CloudCover returns the fraction of good-quality cloudy pixels in the configured region. Missing/stale/invalid NOAA data throws an ASCOM DriverException. SkyTemperature throws PropertyNotImplementedException because the IR sensor is removed. The associated sensor-description/update-time calls report it as not implemented. Weather-station RainRate and other numeric weather properties remain unchanged. See [NOAA details](NOAA-CLOUD.md).
 
 ## Safety-driver pairing
-Install the updated SafetyMonitor alongside the updated ObservingConditions driver before enabling RainCloud. The older SafetyMonitor interprets only the last character and does not enforce the new expiry. **Using the old safety DLL is not supported with RainCloud enabled.**
 
-The output remains `C:\ProgramData\WeatherWatcher2\weatherdata.txt`, with RainCloud-enabled records formatted `WW2RC1|UTC ticks|0 or 1`. 0 means combined safe; 1 means unsafe. The new safety reader rejects records 10 seconds old or from the future. Files are replaced atomically. Legacy non-RainCloud data retains the existing safety behavior.
+Keep the SafetyMonitor version that understands expiring `WW2RC1` records. Older drivers that interpret only the last character are unsuitable for Arduino mode. The file remains `C:\ProgramData\WeatherWatcher2\weatherdata.txt`, atomically replaced with `WW2RC1|UTC ticks|0 or 1`. SAFE is 0; UNSAFE is 1. Serial expiry is ten seconds; a stopped publisher's file also expires after ten seconds. Legacy mode remains unchanged.
 
-The reader rejects records with wrong version/types/ranges, invalid relay combinations, lost power, repeated/backwards counters, missing fields, stale IR acquisition or sensor faults. Disconnecting the source and reader stalls result in unsafe. WeatherWatcher polls safety every two seconds while connected. A sensor stream timeout is ten seconds; the separate safety-file timeout is ten seconds after the last published result. Overall detection latency includes those stages and the client's own polling interval.
+ObservingConditions must remain connected in NINA (or another ASCOM client); SafetyMonitor alone does not start the serial publisher. Opening is prohibited and closure requested by the existing automation using IsSafe, not by a new direct dome command.
 
-If only the SafetyMonitor is connected, it does not open the Uno or launch WeatherWatcher automatically. Keep ObservingConditions connected in NINA to maintain the combined result. A stopped WeatherWatcher expires unsafe.
+## Build and package
 
-## Build
-Use Visual Studio MSBuild with ASCOM Developer Components and .NET Framework 4.7.2 targeting pack installed. Run `build.ps1` from this project. The safety project must use a fresh intermediate directory and `RegisterForComInterop=false`; do not register test builds as a side effect of compilation.
+Run `./build.ps1` from the project with Visual Studio 2022, ASCOM Developer Components and the .NET Framework 4.7.2 targeting pack installed. It restores pinned NuGet dependencies, builds the ObservingConditions solution and complete SafetyMonitor project, builds tests and runs offline regressions. The safety build disables COM registration. The installer is compiled but not run; nothing is installed or flashed.
 
-Source is consolidated under `WeatherWatcher2.ObservingConditions/` and `SafetyMonitor/`, with Uno firmware in `firmware/RainCloudUno/`. The `dist` folder contains both a development ZIP and a combined Inno installer, CCDASTRO.WeatherWatcher-Safety.Setup-1.1.1-development.exe. It installs WeatherWatcher 1.1.0 and SafetyMonitor 1.3.1 together and preserves ASCOM profile settings. RainCloud defaults to disabled. The installer has been compiled but not installed or upgrade-tested. Older standalone SafetyMonitor uninstall entries may remain; do not run those after installing the suite, as they can remove the shared safety DLL. Retain the working installed drivers until bench acceptance passes.
+PureHDF 1.0.1 and its .NET compatibility DLLs must accompany the WeatherWatcher EXE and generated config. `installer/WeatherWatcher-Suite.iss` includes these dependencies. Build-only StrongNamer 0.2.5 adds a strong name to the PureHDF build copy so the existing strong-named WeatherWatcher executable can load it under .NET Framework. The NuGet source package remains unchanged. Tests invoke the decoder in the actual signed WeatherWatcher assembly against a real NOAA fixture. This is assembly compatibility signing, not Authenticode release signing.
 
-## Next hardware checks
-1. Upload and verify the Uno sketch; test both relay states, power loss and IR unplug/recovery.
-2. After deliberate installation of both matching drivers, connect WeatherWatcher to the Uno and observe live sky/rain/cloud data.
-3. Confirm NINA SafetyMonitor remains unsafe while uncalibrated, during dry/clear holds, on unplug, and when WeatherWatcher closes.
-4. Calibrate cloud thresholds at the final mount and conduct a prolonged parallel trial before relying on this input.
+Optional real-file validation: set `WEATHERWATCHER_NOAA_FIXTURE` to a downloaded ABI-L2-ACMF `.nc` file before running the tests. The normal suite is fully offline and does not open USB or write production safety files. The combined repository holds the C# driver in `WeatherWatcher2.ObservingConditions/` and the VB.NET driver in `SafetyMonitor/`. The build preserves the SafetyMonitor AnyCPU architecture guard.
+
+New firmware must be paired with the new Windows parser. The new parser tolerates old IR fields, but an old firmware dry hold adds to the Windows delay. Existing profile settings are preserved; obsolete cloud safety thresholds are ignored. Configure real coordinates before expecting CloudCover.
+
+Commission using [BENCH-TEST.md](BENCH-TEST.md). Binaries built here are development artifacts until installation and physical hardware tests pass.
+
+## Optional Pushover cloud warnings
+
+Version 1.2.1 adds **Cloud notifications...** in setup. Credentials are protected with Windows DPAPI. Warning/clearing thresholds and cooldown are configurable; unavailable/restored notices are optional. Notification delivery is asynchronous and has no safety-state access. See [PUSHOVER.md](PUSHOVER.md).

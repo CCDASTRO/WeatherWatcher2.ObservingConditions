@@ -367,3 +367,7 @@ objRainCloud/
 
 # Keep local strong-name signing material out of this repository
 SafetyMonitor/ASCOMDriverTemplate.snk
+
+# Local dependency cache and verification tools
+.packages/
+.tools/

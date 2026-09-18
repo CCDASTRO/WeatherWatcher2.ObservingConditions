@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="WeatherWatcher: local RG-11 rain protection, NOAA GOES-East cloud cover and optional Pushover advisories for ASCOM observatories.">
+  <meta name="keywords" content="ASCOM, WeatherWatcher, SNF Safety, observatory conditions, weather monitor, astronomy, astrophotography">
+  <title>WeatherWatcher &amp; SafetyMonitor Suite | CCDASTRO</title>
+  <link rel="stylesheet" href="ccdastro-modern.css">
+</head>
+<body><a class="skip" href="#main">Skip to content</a>
+  <header><nav class="wrap" aria-label="Primary navigation"><a class="brand" href="index.html">CCD<span>ASTRO</span></a><div class="navlinks"><a href="index.html">Home</a><a href="index.html#explore">Collections &amp; stories</a><a href="index.html#services">Services</a><a href="RRCI.html">Roof control</a><a href="wwi.html">Weather &amp; safety</a><a href="SNR.htm">The ranch</a><a href="https://github.com/CCDASTRO">GitHub ↗</a></div></nav></header>
+
+  <main id="main">
+    <section class="hero center wrap">
+      <div class="eyebrow">Observatory weather, rain protection and cloud advisories</div>
+      <h1>WeatherWatcher &amp; SafetyMonitor</h1>
+      <p class="lead">Local RG-11 rain protection, NOAA satellite cloud information and optional Pushover warnings. Rain controls safety; clouds and notifications stay informational.</p>
+    </section>
+    <section class="software-grid section wrap" aria-label="WeatherWatcher features">
+      <article class="card"><h2>Rain protection stays local</h2><p>The Arduino Uno reads the Hydreon RG-11 rain relay and isolated power monitor. Wet/rain, contact faults, power loss or lost serial communication prevent a SAFE result.</p><p>Existing automation uses UNSAFE to prohibit opening or close an open dome. A configurable dry-out delay defaults to five minutes. No Internet service is required for RG-11 protection.</p></article>
+      <article class="card"><h2>NOAA replaces the IR sensor</h2><p>The IR sky-temperature module has been removed. Windows reads the NOAA GOES-East ABI Level-2 Clear Sky Mask and calculates regional CloudCover around your observatory.</p><p>Defaults: 15 km radius, ten-minute polling and thirty-minute stale timeout. Cloudy conditions and failed or stale NOAA data do not change safety. Unavailable cloud data is reported unavailable, never zero.</p></article>
+      <article class="card"><h2>Pushover cloud warnings</h2><p>Optional phone/device advisories warn at 30% cloud cover and report clearing at 20%, with a configurable thirty-minute cooldown. Data-unavailable and recovered notices are optional.</p><p>Enter protected credentials under <strong>Cloud notifications...</strong> and send a labeled test. Alerts use normal priority and respect quiet hours. Delivery failures cannot delay rain handling or change SAFE/UNSAFE.</p></article>
+      <article class="card"><h2>Keep your existing weather sources</h2><p>Cumulus, Ambient Weather, weather limits and legacy Boltwood operation remain available. Arduino mode takes precedence over Boltwood; disabling it retains the existing file/API modes.</p><p>An independently selected Ambient API source retains its existing health checks. WeatherWatcher reports conditions and safety; your automation remains responsible for dome movement.</p></article>
+    </section>
+    <section class="section wrap"><h2>Set up the new workflow</h2><ol><li>Close NINA and other ASCOM clients before installing matching drivers.</li><li>Use the rain-only Uno sketch, remove the IR module and retain the RG-11 power/contact wiring.</li><li>Enable Arduino/NOAA mode; configure the COM port, dry-out delay and observatory coordinates.</li><li>Optionally configure Pushover credentials, thresholds and cooldown.</li><li>Keep ObservingConditions connected and use the matching SafetyMonitor. Bench-test rain, connection loss, recovery and automation closure.</li></ol><div class="actions"><a class="button" href="weatherwatcher-guide.html">Detailed setup guide</a><a class="button secondary" href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions">Source and README</a><a class="button secondary" href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases">Available installers</a></div></section>
+    <section class="preview wrap"><h2>Version 1.2.1 development</h2><p>Current source pairs WeatherWatcher 1.2.1 with SafetyMonitor 1.3.1, preserving its AnyCPU compatibility fix. It includes the rain-only Arduino, NOAA cloud provider and Pushover notifications. Build current source to produce the combined installer; the releases page identifies packages already published.</p><p>219 offline checks passed, including rain safety during a stalled notification. Both Windows configurations and the installer build successfully; the Uno sketch compiled. NOAA decoding was independently verified against a real satellite product. No real Pushover messages or physical rain/dome tests are claimed. Installation and hardware qualification of this new build remain outstanding.</p><p><a href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/blob/master/docs/RainCloud/HARDWARE.md">Current wiring and parts</a> · <a href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/blob/master/docs/RainCloud/NOAA-CLOUD.md">NOAA method and limitations</a> · <a href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/blob/master/docs/RainCloud/PUSHOVER.md">Pushover setup</a> · <a href="https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/blob/master/docs/RainCloud/BENCH-TEST.md">Bench checklist</a></p><p>Old IR wiring diagrams and Fritzing files are historical references. Follow the current RG-11 wiring table.</p></section>
+  </main>
+
+  <footer><div class="wrap footer-row"><p>CCDASTRO · Astronomy &amp; observatory automation</p><a href="https://ccdastro.com/formphp.html">Contact Chuck Faranda ↗</a></div></footer>
+</body>
+</html>
