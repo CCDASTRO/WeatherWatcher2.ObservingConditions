@@ -4,7 +4,7 @@ One repository for **WeatherWatcher ObservingConditions**, **WeatherWatcher Safe
 
 **Rain controls safety. Satellite clouds and notifications do not.** The Arduino IR sky-temperature sensor has been removed from the current firmware and Arduino-mode processing.
 
-[Setup guide](docs/weatherwatcher-guide.html) · [Pushover setup](docs/RainCloud/PUSHOVER.md) · [NOAA details](docs/RainCloud/NOAA-CLOUD.md) · [Available releases](https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases)
+[Setup guide](docs/weatherwatcher-guide.html) · [Pushover setup](docs/RainCloud/PUSHOVER.md) · [NOAA details](docs/RainCloud/NOAA-CLOUD.md) · [Download the 1.2.1 installer](https://github.com/CCDASTRO/WeatherWatcher2.ObservingConditions/releases/download/v1.2.1/CCDASTRO.WeatherWatcher-Safety.Setup-1.2.1.exe)
 
 ## What's new
 
