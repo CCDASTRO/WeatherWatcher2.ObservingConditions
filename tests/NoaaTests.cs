@@ -44,11 +44,11 @@ internal static class NoaaTests
         pending.SetResult(reading); Wait(moving);
         check(moving.Get(changed,now,600,out status)==null,"In-flight previous-site result cannot populate new-site cache"); Wait(moving);
 
-        bool oldRain=DriverSettings.UseRainCloud, oldAmbient=DriverSettings.UseAmbient, oldCumulus=DriverSettings.UseCumulus, oldBoltwood=DriverSettings.UseBoltwood;
+        bool oldNoaa=DriverSettings.UseNoaa, oldRain=DriverSettings.UseRainCloud, oldAmbient=DriverSettings.UseAmbient, oldCumulus=DriverSettings.UseCumulus, oldBoltwood=DriverSettings.UseBoltwood;
         double oldLat=DriverSettings.ObservatoryLatitude, oldLon=DriverSettings.ObservatoryLongitude;
         try
         {
-            DriverSettings.UseRainCloud=true; DriverSettings.UseAmbient=DriverSettings.UseCumulus=DriverSettings.UseBoltwood=false;
+            DriverSettings.UseNoaa=true; DriverSettings.UseRainCloud=true; DriverSettings.UseAmbient=DriverSettings.UseCumulus=DriverSettings.UseBoltwood=false;
             DriverSettings.ObservatoryLatitude=35; DriverSettings.ObservatoryLongitude=-80;
             var view=new RainCloudView {Safe=true,Fresh=true,Rain="dry"};
             var ready=new NoaaCloudClient((s,p)=>Task.FromResult(reading));
@@ -56,6 +56,34 @@ internal static class NoaaTests
             var reader=new WeatherDataReader(null) {NoaaClient=ready,RainCloudRead=()=>view,SafetyWriter=_=>{}};
             check(reader.ReadValue("CloudCover")==100 && reader.Data.IsSafe,"Overcast NOAA is informational and SAFE when dry");
             check(reader.TimeSinceLastUpdate("CloudCover")>=720,"ASCOM reports satellite observation age");
+            DriverSettings.UseRainCloud=false;
+            reader.RainCloudRead=()=>{throw new Exception("NOAA-only must not read Arduino");};
+            check(reader.ReadValue("CloudCover")==100,"NOAA cloud retrieval works without Arduino");
+            check(reader.SensorDescription("CloudCover").Contains("NOAA"),"NOAA-only ASCOM description");
+            string savedPath=DriverSettings.BoltwoodFile, fixturePath=Path.GetTempFileName();
+            try
+            {
+                DriverSettings.UseBoltwood=true; DriverSettings.BoltwoodFile=fixturePath;
+                File.WriteAllText(fixturePath,"date time C K -25 15 0 0 0 0 0 1 0");
+                check(reader.ReadValue("CloudCover")==100 && !reader.Data.IsSafe,"NOAA-only preserves Boltwood rain protection");
+                check(reader.ReadValue("SkyTemperature")==-25,"NOAA-only preserves Boltwood sky temperature");
+                DriverSettings.UseNoaa=false;
+                check(reader.ReadValue("CloudCover")==0,"Disabling NOAA restores Boltwood cloud reading");
+            }
+            finally {DriverSettings.UseBoltwood=false;DriverSettings.BoltwoodFile=savedPath;File.Delete(fixturePath);}
+            DriverSettings.UseNoaa=false;
+            int disabledRequests=0;
+            var disabledClient=new NoaaCloudClient((s,p)=>{Interlocked.Increment(ref disabledRequests); return Task.FromResult(reading);});
+            reader.NoaaClient=disabledClient;
+            reader.Refresh(); Wait(disabledClient);
+            check(disabledRequests==0,"Both options disabled do not fetch NOAA or read Arduino");
+            DriverSettings.UseRainCloud=true; reader.RainCloudRead=()=>view;
+            reader.Refresh(); Wait(disabledClient);
+            check(reader.Data.IsSafe && disabledRequests==0,"Arduino-only protection does not fetch NOAA");
+            bool noCloud=false; try { reader.ReadValue("CloudCover"); } catch(ASCOM.PropertyNotImplementedException) {noCloud=true;}
+            check(noCloud,"Arduino-only does not report fabricated cloud cover");
+            view.Safe=false; reader.Refresh(); check(!reader.Data.IsSafe,"Arduino-only rain remains unsafe");
+            DriverSettings.UseNoaa=true; reader.NoaaClient=ready;
             view.Safe=false; view.Rain="rain"; reader.Refresh();
             check(!reader.Data.IsSafe,"Rain is UNSAFE regardless of valid satellite clouds");
             view.Safe=true; view.Rain="dry";
@@ -77,7 +105,7 @@ internal static class NoaaTests
         }
         finally
         {
-            DriverSettings.UseRainCloud=oldRain; DriverSettings.UseAmbient=oldAmbient; DriverSettings.UseCumulus=oldCumulus; DriverSettings.UseBoltwood=oldBoltwood;
+            DriverSettings.UseNoaa=oldNoaa; DriverSettings.UseRainCloud=oldRain; DriverSettings.UseAmbient=oldAmbient; DriverSettings.UseCumulus=oldCumulus; DriverSettings.UseBoltwood=oldBoltwood;
             DriverSettings.ObservatoryLatitude=oldLat; DriverSettings.ObservatoryLongitude=oldLon;
         }
         // Optional real NOAA fixture test; never downloads or writes a production safety file.

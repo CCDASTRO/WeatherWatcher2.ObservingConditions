@@ -1,17 +1,17 @@
 # ASCOM integration — development build
 
-WeatherWatcher ObservingConditions 1.2.1 and the existing WeatherWatcher SafetyMonitor 1.3.1 preserve the local-server and `WW2RC1` safety-file architecture. The SafetyMonitor implementation and protocol do not need modification for this change.
+WeatherWatcher ObservingConditions 1.2.2 and the existing WeatherWatcher SafetyMonitor 1.3.1 preserve the local-server and `WW2RC1` safety-file architecture. The SafetyMonitor implementation and protocol do not need modification for this change.
 
 ## Data and safety paths
 
 - Arduino RG-11 + power/contact monitoring → shared USB reader → rain safety with configurable dry-out → combined existing weather safety → timestamped safety file → SafetyMonitor → existing dome automation.
 - NOAA GOES-East ABI Level-2 cloud mask → background Windows retrieval/decoding → shared cache → ASCOM CloudCover. There is no NOAA-to-safety connection.
 
-Select **Use Arduino RG-11 rain protection and NOAA cloud information** in setup. It replaces the former Arduino IR/cloud mode and, as before, takes precedence over Boltwood. Existing Ambient/Cumulus inputs and independent wind, humidity, temperature and selected-source health checks remain. NOAA failure does not create a new safety veto; an independently selected Ambient API source still retains its existing failure behavior.
+Select **Use Arduino RG-11 rain protection** and **Use NOAA GOES cloud information (no Arduino required)** independently. Arduino disables Boltwood while preserving its saved selection. NOAA alone leaves Boltwood rain and sky temperature available and replaces only CloudCover. Existing combined profiles migrate with both options enabled. Existing Ambient/Cumulus inputs and independent wind, humidity, temperature and selected-source health checks remain. NOAA failure does not create a new safety veto; an independently selected Ambient API source still retains its existing failure behavior.
 
 RG-11 wet/rain, invalid contacts, lost power, malformed serial data and communication expiry are unsafe. Valid dry data must persist for the configured delay (default 300 seconds). Rain state changes enqueue an immediate safety refresh without waiting for the two-second background heartbeat. NOAA never blocks the serial reader or an ASCOM call. Actual closure timing also depends on the automation client's polling and dome movement.
 
-CloudCover returns the fraction of good-quality cloudy pixels in the configured region. Missing/stale/invalid NOAA data throws an ASCOM DriverException. SkyTemperature throws PropertyNotImplementedException because the IR sensor is removed. The associated sensor-description/update-time calls report it as not implemented. Weather-station RainRate and other numeric weather properties remain unchanged. See [NOAA details](NOAA-CLOUD.md).
+CloudCover returns the fraction of good-quality cloudy pixels in the configured region. Missing/stale/invalid NOAA data throws an ASCOM DriverException. In Arduino mode, SkyTemperature throws PropertyNotImplementedException because the IR sensor is removed. With Arduino disabled, Boltwood can still supply sky temperature. The associated sensor-description/update-time calls report it as not implemented. Weather-station RainRate and other numeric weather properties remain unchanged. See [NOAA details](NOAA-CLOUD.md).
 
 ## Safety-driver pairing
 

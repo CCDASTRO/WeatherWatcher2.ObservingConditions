@@ -39,14 +39,14 @@ namespace WeatherWatcher2.ObservingConditions
         }
 
         private PushoverSettings pushoverSettings;
-        private CheckBox chkRainCloud;
+        private CheckBox chkRainCloud, chkNoaa;
         private TextBox txtRainPort;
         private NumericUpDown numDryDelay, numNoaaPoll, numNoaaAge, numNoaaRadius;
         private TextBox txtLatitude, txtLongitude;
         private void InitializeRainCloudControls()
         {
             ClientSize = new System.Drawing.Size(570, 805);
-            chkRainCloud = new CheckBox { Text = "Use Arduino RG-11 rain protection and NOAA cloud information", AutoSize = true, Left = 14, Top = 465 };
+            chkRainCloud = new CheckBox { Text = "Use Arduino RG-11 rain protection", AutoSize = true, Left = 14, Top = 465 };
             txtRainPort = new TextBox { Left = 145, Top = 492, Width = 95 };
             numDryDelay = new NumericUpDown { Left = 430, Top = 492, Width = 95, Minimum = 0, Maximum = 3600 };
             chkRainCloud.CheckedChanged += (sender, args) => { chkUseBoltwood.Enabled = !chkRainCloud.Checked; txtBoltwood.Enabled = !chkRainCloud.Checked; btnBrowseBoltwood.Enabled = !chkRainCloud.Checked; };
@@ -54,7 +54,8 @@ namespace WeatherWatcher2.ObservingConditions
             Controls.Add(new Label { Text = "Uno COM port", Left = 14, Top = 496, AutoSize = true });
             Controls.Add(new Label { Text = "RG-11 dry-out (sec)", Left = 265, Top = 496, AutoSize = true });
             Controls.Add(new Label { Text = "Wet, fault or lost Arduino connection = UNSAFE. Clouds are informational.\r\nRequires WeatherWatcher SafetyMonitor with WW2RC1 support.", Left = 14, Top = 528, Width = 540, Height = 44 });
-            Controls.Add(new Label { Text = "NOAA GOES-East cloud mask (latitude north / longitude east positive)", Left = 14, Top = 576, AutoSize = true });
+            chkNoaa = new CheckBox { Text = "Use NOAA GOES cloud information (no Arduino required)", Left = 14, Top = 576, AutoSize = true };
+            Controls.Add(chkNoaa);
             txtLatitude = AddAmbientText("Latitude (degrees)", 600, false);
             txtLongitude = AddAmbientText("Longitude (degrees)", 630, false);
             numNoaaRadius = AddNoaaNumber("Sampling radius (km)", 660, 5, 100);
@@ -191,6 +192,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             pushoverSettings = DriverSettings.Pushover.Copy();
             chkRainCloud.Checked = DriverSettings.UseRainCloud;
+            chkNoaa.Checked = DriverSettings.UseNoaa;
             txtRainPort.Text = DriverSettings.RainCloudPort;
             numDryDelay.Value = DriverSettings.RainCloudRecoverySeconds;
             txtLatitude.Text = double.IsNaN(DriverSettings.ObservatoryLatitude) ? "" : DriverSettings.ObservatoryLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -324,12 +326,14 @@ namespace WeatherWatcher2.ObservingConditions
                 { MessageBox.Show(this, "Enter latitude -90 to 90 and longitude -180 to 180 using a decimal point, or leave both blank for rain-only operation."); return; }
             }
             if (numNoaaAge.Value < numNoaaPoll.Value) { MessageBox.Show(this, "NOAA stale timeout must be at least the polling interval."); return; }
+            if (chkNoaa.Checked && (double.IsNaN(latitude) || double.IsNaN(longitude))) { MessageBox.Show(this, "Enter observatory latitude and longitude to enable NOAA cloud information."); return; }
             DriverSettings.ObservatoryLatitude = latitude;
             DriverSettings.ObservatoryLongitude = longitude;
             DriverSettings.NoaaRadiusKm = (double)numNoaaRadius.Value;
             DriverSettings.NoaaPollSeconds = (int)numNoaaPoll.Value;
             DriverSettings.NoaaStaleSeconds = (int)numNoaaAge.Value;
             DriverSettings.UseRainCloud = chkRainCloud.Checked;
+            DriverSettings.UseNoaa = chkNoaa.Checked;
             DriverSettings.RainCloudPort = txtRainPort.Text.Trim().ToUpperInvariant();
             DriverSettings.RainCloudRecoverySeconds = (int)numDryDelay.Value;
             DriverSettings.UseAmbient = chkUseAmbient.Checked;

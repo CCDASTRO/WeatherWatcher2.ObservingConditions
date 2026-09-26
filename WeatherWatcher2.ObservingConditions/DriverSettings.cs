@@ -14,6 +14,7 @@ namespace WeatherWatcher2.ObservingConditions
         public static double MaxWind = 20, MaxHumidity = 90, MinTemp = 0, MaxTemp = 35;
         public static bool UseBoltwood = true, UseCumulus = true, EnableLogging = false;
         public static bool UseRainCloud = false;
+        public static bool UseNoaa = false;
         public static string RainCloudPort = "COM5";
         public static int RainCloudRecoverySeconds = 300;
         public static double ObservatoryLatitude = double.NaN, ObservatoryLongitude = double.NaN;
@@ -37,6 +38,8 @@ namespace WeatherWatcher2.ObservingConditions
                     UseCumulus = ReadBool(p, "UseCumulus", true);
                     UseAmbient = ReadBool(p, "UseAmbient", false);
                     UseRainCloud = ReadBool(p, "UseRainCloud", false);
+                    // Preserve the combined option for existing profiles on first upgrade.
+                    UseNoaa = ReadBool(p, "UseNoaa", UseRainCloud);
                     RainCloudPort = p.GetValue(DriverId, "RainCloudPort", "", "COM5");
                     RainCloudRecoverySeconds = (int)ReadNumber(p, "RainCloudRecoverySeconds", 300, 0, 3600);
                     ObservatoryLatitude = ReadNumber(p, "ObservatoryLatitude", double.NaN, -90, 90);
@@ -116,6 +119,7 @@ namespace WeatherWatcher2.ObservingConditions
                 p.WriteValue(DriverId, "PushoverClearPercent", Pushover.ClearPercent.ToString(CultureInfo.InvariantCulture));
                 p.WriteValue(DriverId, "PushoverCooldownMinutes", Pushover.CooldownMinutes.ToString(CultureInfo.InvariantCulture));
                 p.WriteValue(DriverId, "UseRainCloud", UseRainCloud.ToString());
+                p.WriteValue(DriverId, "UseNoaa", UseNoaa.ToString());
                 p.WriteValue(DriverId, "RainCloudPort", RainCloudPort);
                 p.WriteValue(DriverId, "RainCloudRecoverySeconds", RainCloudRecoverySeconds.ToString(CultureInfo.InvariantCulture));
                 p.WriteValue(DriverId, "ObservatoryLatitude", ObservatoryLatitude.ToString(CultureInfo.InvariantCulture));

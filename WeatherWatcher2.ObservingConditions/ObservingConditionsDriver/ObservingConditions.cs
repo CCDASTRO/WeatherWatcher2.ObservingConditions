@@ -187,7 +187,7 @@ namespace WeatherWatcher2.ObservingConditions
                         {
                             lock (connectionGate)
                             {
-                                if (!connected || (!DriverSettings.UseAmbient && !DriverSettings.UseRainCloud)) return;
+                                if (!connected || (!DriverSettings.UseAmbient && !DriverSettings.UseRainCloud && !DriverSettings.UseNoaa)) return;
                                 try { reader.Refresh(); }
                                 catch { tl?.LogMessage("Ambient", "Background refresh failed."); }
                             }

@@ -36,7 +36,7 @@ namespace WeatherWatcher2.ObservingConditions
         {
             lock (gate)
             {
-                string selection = DriverSettings.UseRainCloud + "|" + DriverSettings.UseAmbient + "|" + DriverSettings.UseCumulus + "|" +
+                string selection = DriverSettings.UseRainCloud + "|" + DriverSettings.UseNoaa + "|" + DriverSettings.UseAmbient + "|" + DriverSettings.UseCumulus + "|" +
                     DriverSettings.UseBoltwood + "|" + DriverSettings.CumulusFile + "|" + DriverSettings.BoltwoodFile;
                 if (sourceSelection != selection)
                 {
@@ -55,6 +55,9 @@ namespace WeatherWatcher2.ObservingConditions
                 }
                 if (DriverSettings.UseBoltwood && !DriverSettings.UseRainCloud) ReadBoltwood();
                 if (DriverSettings.UseRainCloud) ReadRainCloud();
+                else rainCloud = null;
+                if (DriverSettings.UseNoaa) ReadNoaa();
+                else cloudReading = null;
                 EvaluateSafeState();
                 if (DriverSettings.UseRainCloud) Data.IsSafe = Data.IsSafe && rainCloud != null && rainCloud.Safe &&
                     (DriverSettings.UseAmbient || !DriverSettings.UseCumulus || (cumulusHealthy && !IsFileStale(DriverSettings.CumulusFile, DriverSettings.AmbientMaxAgeSeconds)));
@@ -68,7 +71,7 @@ namespace WeatherWatcher2.ObservingConditions
                 if (SafetyWriter != null) SafetyWriter(Data.IsSafe);
                 else WriteSafetyFile();
                 // Notification evaluation follows safety publication and never performs network I/O here.
-                if (DriverSettings.UseRainCloud && NotificationsActive)
+                if (DriverSettings.UseNoaa && NotificationsActive)
                 {
                     try { Notifier.Process(cloudReading, DateTime.UtcNow, DriverSettings.NoaaStaleSeconds, NoaaSite.Current, DriverSettings.Pushover); }
                     catch { /* Advisory failures must never interfere with rain protection. */ }
@@ -82,6 +85,7 @@ namespace WeatherWatcher2.ObservingConditions
         private void ReadRainCloud()
         {
             rainCloud = RainCloudRead();
+            if (!DriverSettings.UseNoaa) Data.CloudCover = double.NaN;
             Data.SkyTemperature = double.NaN; // No IR sensor is installed.
             Data.RainUnsafe = Data.RainRate > 0 || !rainCloud.Safe;
             Data.CloudUnsafe = false; // Satellite clouds never participate in safety.
@@ -91,6 +95,9 @@ namespace WeatherWatcher2.ObservingConditions
                 lastRainStatus = rainStatus;
                 tl?.LogMessage("RG-11", rainStatus + "; sample age " + rainCloud.AgeSeconds.ToString("F1") + "s");
             }
+        }
+        private void ReadNoaa()
+        {
             cloudReading = NoaaClient.Get(NoaaSite.Current, DateTime.UtcNow, DriverSettings.NoaaPollSeconds, out cloudError);
             bool valid = cloudReading != null && cloudReading.IsFresh(DateTime.UtcNow, DriverSettings.NoaaStaleSeconds);
             Data.CloudCover = valid ? cloudReading.Percent : double.NaN;
@@ -131,9 +138,9 @@ namespace WeatherWatcher2.ObservingConditions
             lock (gate)
             {
                 Refresh();
-                if (DriverSettings.UseRainCloud && propertyName == "SkyTemperature")
+                if (DriverSettings.UseRainCloud && (propertyName == "SkyTemperature" || (!DriverSettings.UseNoaa && propertyName == "CloudCover")))
                     throw new ASCOM.PropertyNotImplementedException(propertyName, false);
-                if (DriverSettings.UseRainCloud && propertyName == "CloudCover")
+                if (DriverSettings.UseNoaa && propertyName == "CloudCover")
                 {
                     if (double.IsNaN(Data.CloudCover)) throw new ASCOM.DriverException(cloudError ?? "NOAA cloud data is unavailable or stale.");
                     return Data.CloudCover;
@@ -428,8 +435,8 @@ namespace WeatherWatcher2.ObservingConditions
 
         public string SensorDescription(string propertyName)
         {
-            if (DriverSettings.UseRainCloud && propertyName == "SkyTemperature") throw new ASCOM.MethodNotImplementedException("SensorDescription(SkyTemperature)");
-            if (DriverSettings.UseRainCloud && propertyName == "CloudCover") return "NOAA GOES-East ABI Level-2 clear sky mask: percent good-quality cloudy/probably cloudy pixels within configured ground radius; informational only";
+            if (DriverSettings.UseRainCloud && (propertyName == "SkyTemperature" || (!DriverSettings.UseNoaa && propertyName == "CloudCover"))) throw new ASCOM.MethodNotImplementedException("SensorDescription(SkyTemperature)");
+            if (DriverSettings.UseNoaa && propertyName == "CloudCover") return "NOAA GOES-East ABI Level-2 clear sky mask: percent good-quality cloudy/probably cloudy pixels within configured ground radius; informational only";
             return propertyName;
         }
 
@@ -437,8 +444,8 @@ namespace WeatherWatcher2.ObservingConditions
         {
             lock (gate)
             {
-                if (DriverSettings.UseRainCloud && propertyName == "SkyTemperature") throw new ASCOM.MethodNotImplementedException("TimeSinceLastUpdate(SkyTemperature)");
-                if (DriverSettings.UseRainCloud && propertyName == "CloudCover")
+                if (DriverSettings.UseRainCloud && (propertyName == "SkyTemperature" || (!DriverSettings.UseNoaa && propertyName == "CloudCover"))) throw new ASCOM.MethodNotImplementedException("TimeSinceLastUpdate(SkyTemperature)");
+                if (DriverSettings.UseNoaa && propertyName == "CloudCover")
                 {
                     ReadValue("CloudCover");
                     return (DateTime.UtcNow - cloudReading.ObservationUtc).TotalSeconds;

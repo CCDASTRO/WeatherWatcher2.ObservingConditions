@@ -9,7 +9,7 @@ Open WeatherWatcher setup and choose **Cloud notifications...**. Notifications a
 3. Optionally enter a target device name; blank uses the Pushover account's default routing.
 4. Enable notifications. Defaults: warn at or above **30%**, clearing at or below **20%**, **30-minute cooldown** between automatic attempts. Clearing notifications default on; NOAA unavailable/recovered notifications default off.
 5. Use **Send test notification** to send a clearly labeled test with the entered credentials. This works even before enabling automatic notifications. It sends a real message and does not save settings or simulate a weather event.
-6. Click OK in this dialog, then OK in the main WeatherWatcher setup to persist changes. Cancel in the main setup discards the notification changes. Keep ObservingConditions connected with Arduino/NOAA mode enabled and valid observatory coordinates configured.
+6. Click OK in this dialog, then OK in the main WeatherWatcher setup to persist changes. Cancel in the main setup discards the notification changes. Keep ObservingConditions connected with NOAA cloud information enabled and valid observatory coordinates configured.
 
 The token and user/group key are masked in the dialog and encrypted in the ASCOM profile using Windows DPAPI for the current Windows user, like existing Ambient credentials. They are never included in trace messages. Moving to another Windows account requires entering them again.
 

@@ -1,5 +1,7 @@
 # NOAA cloud information
 
+Enable **Use NOAA GOES cloud information (no Arduino required)** independently of Arduino rain protection. NOAA requires observatory coordinates and Internet access. With NOAA disabled, no new NOAA fetches or automatic cloud advisories are initiated. An already-running request may finish. With Arduino disabled, Boltwood remains available for rain and sky temperature; NOAA overrides only CloudCover.
+
 WeatherWatcher reads the public NOAA GOES-East (currently GOES-19) ABI Level-2 Clear Sky Mask, full-disk product `ABI-L2-ACMF`. It lists the current and previous UTC hours at `https://noaa-goes19.s3.amazonaws.com/` and downloads the latest `.nc` object. No account or API key is required. The full disk covers more observatory locations than CONUS; its nominal ten-minute update cadence matches the default poll interval.
 
 The source is a scientific NetCDF4/HDF5 product, not a rendered satellite image. PureHDF 1.0.1 reads the packed fixed-grid coordinates, projection metadata, `BCM` binary mask and `DQF` quality flags. Version 1.x supports the existing .NET Framework 4.7.2 application without native NetCDF DLLs. The installer includes a strong-named build copy of PureHDF and its runtime dependencies. Build-only StrongNamer 0.2.5 performs the compatibility signing required by the existing signed .NET Framework application.

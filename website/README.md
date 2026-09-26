@@ -1,6 +1,6 @@
 # CCDASTRO website upload files
 
-These files update the existing site's home-page WeatherWatcher card, weather/safety page and detailed setup guide. They describe RG-11-only firmware, NOAA clouds, Pushover advisories and version 1.2.1.
+These files update the existing site's home-page WeatherWatcher card, weather/safety page and detailed setup guide. They describe RG-11-only firmware, NOAA clouds, Pushover advisories and version 1.2.2.
 
 Copy index.html, wwi.html and weatherwatcher-guide.html to the existing CCDASTRO website root using its normal hosting upload process. The matching stylesheet is included for local preview. Keep the existing site's other pages, images and downloads in place; this is a partial update, not a replacement site.
 

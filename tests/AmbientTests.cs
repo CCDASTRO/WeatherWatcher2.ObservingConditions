@@ -59,6 +59,14 @@ internal static class AmbientTests
             var cumulus = (System.Windows.Forms.CheckBox)field("chkUseCumulus");
             var boltwood = (System.Windows.Forms.CheckBox)field("chkUseBoltwood");
             Check(ambient.Checked && !cumulus.Enabled && boltwood.Enabled, "Ambient UI source selection");
+            var arduino = (System.Windows.Forms.CheckBox)field("chkRainCloud");
+            var noaa = (System.Windows.Forms.CheckBox)field("chkNoaa");
+            noaa.Checked = true;
+            Check(!arduino.Checked && boltwood.Enabled, "NOAA-only leaves Arduino off and Boltwood available");
+            boltwood.Checked = true; arduino.Checked = true; noaa.Checked = false;
+            Check(arduino.Checked && !noaa.Checked && !boltwood.Enabled && boltwood.Checked, "Arduino-only preserves disabled Boltwood selection");
+            arduino.Checked = false;
+            Check(boltwood.Enabled && boltwood.Checked && !noaa.Checked, "Disabling Arduino restores Boltwood without enabling NOAA");
             Check(((System.Windows.Forms.TextBox)field("txtApiKey")).UseSystemPasswordChar, "API key mask");
             Check(form.TopMost, "Setup dialog must remain above the calling application");
             Check(form.ShowInTaskbar, "Setup dialog must remain discoverable on the taskbar");

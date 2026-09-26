@@ -78,13 +78,13 @@ internal static class PushoverTests
         rejected=false;try{PushoverClient.ValidateResponse(false,"{\"status\":1}");}catch(InvalidOperationException){rejected=true;}
         check(rejected,"HTTP failure cannot be reported delivered");
 
-        var previous=DriverSettings.Pushover; bool oldRain=DriverSettings.UseRainCloud, oldAmbient=DriverSettings.UseAmbient, oldCumulus=DriverSettings.UseCumulus, oldBoltwood=DriverSettings.UseBoltwood;
+        var previous=DriverSettings.Pushover; bool oldNoaa=DriverSettings.UseNoaa, oldRain=DriverSettings.UseRainCloud, oldAmbient=DriverSettings.UseAmbient, oldCumulus=DriverSettings.UseCumulus, oldBoltwood=DriverSettings.UseBoltwood;
         double oldLat=DriverSettings.ObservatoryLatitude,oldLon=DriverSettings.ObservatoryLongitude;
         var pending=new TaskCompletionSource<bool>();
         var slow=new CloudNotifier((s,n)=>pending.Task);
         try
         {
-            DriverSettings.Pushover=settings; DriverSettings.UseRainCloud=true; DriverSettings.UseAmbient=DriverSettings.UseCumulus=DriverSettings.UseBoltwood=false;
+            DriverSettings.Pushover=settings; DriverSettings.UseNoaa=true; DriverSettings.UseRainCloud=true; DriverSettings.UseAmbient=DriverSettings.UseCumulus=DriverSettings.UseBoltwood=false;
             DriverSettings.ObservatoryLatitude=35;DriverSettings.ObservatoryLongitude=-80;
             DateTime actual=DateTime.UtcNow;
             var noaa=new NoaaCloudClient((s,p)=>Task.FromResult(Reading(actual,80)));
@@ -103,7 +103,7 @@ internal static class PushoverTests
         }
         finally
         {
-            pending.TrySetResult(true);DriverSettings.Pushover=previous; DriverSettings.UseRainCloud=oldRain;DriverSettings.UseAmbient=oldAmbient;DriverSettings.UseCumulus=oldCumulus;DriverSettings.UseBoltwood=oldBoltwood;
+            pending.TrySetResult(true);DriverSettings.Pushover=previous; DriverSettings.UseNoaa=oldNoaa; DriverSettings.UseRainCloud=oldRain;DriverSettings.UseAmbient=oldAmbient;DriverSettings.UseCumulus=oldCumulus;DriverSettings.UseBoltwood=oldBoltwood;
             DriverSettings.ObservatoryLatitude=oldLat;DriverSettings.ObservatoryLongitude=oldLon;
         }
         CheckDialog(check);
